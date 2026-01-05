@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { ArrowRight, Zap, CheckCircle2, Mail, Database, GitBranch, Bell, Clock, Webhook, Settings } from "lucide-react";
+import { ArrowRight, Zap, CheckCircle2, Mail, Database, GitBranch, Bell, Webhook, Settings } from "lucide-react";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { useAuthStore } from "@/lib/store";
@@ -13,6 +13,7 @@ import { useAuthStore } from "@/lib/store";
 export default function Hero() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -57,6 +58,9 @@ export default function Hero() {
           },
           "-=1"
         );
+
+    // Set mounted to true after hydration
+    setMounted(true);
 
       // Parallax mouse movement effect
       const handleMouseMove = (e: MouseEvent) => {
@@ -133,10 +137,10 @@ export default function Hero() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8"
           >
             <button
-              onClick={() => router.push(isAuthenticated ? "/dashboard" : "/signup")}
+              onClick={() => router.push(mounted && isAuthenticated ? "/dashboard" : "/signup")}
               className="group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-full bg-primary px-8 font-medium text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:scale-105 hover:shadow-[0_0_20px_0_theme(colors.primary.DEFAULT/30%)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
-              <span className="mr-2">{isAuthenticated ? "Go to Dashboard" : "Get Started Free"}</span>
+              <span className="mr-2">{mounted && isAuthenticated ? "Go to Dashboard" : "Get Started Free"}</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
             <button

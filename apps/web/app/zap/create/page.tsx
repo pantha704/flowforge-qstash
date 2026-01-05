@@ -12,8 +12,16 @@ import { ButtonPair } from "@/components/canvas/ButtonPair";
 import { api } from "@/lib/api";
 import { useZapBuilderStore, useAuthStore } from "@/lib/store";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Repeat } from "lucide-react";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 export default function CreateZapPage() {
   const router = useRouter();
@@ -24,6 +32,8 @@ export default function CreateZapPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [maxRuns, setMaxRuns] = useState<number>(-1); // -1 = forever
+  const [customRuns, setCustomRuns] = useState<string>("");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -124,6 +134,7 @@ export default function CreateZapPage() {
           availableActionId: a.availableAction.id,
           actionMetadata: a.actionMetadata,
         })),
+        maxRuns: maxRuns === 0 ? parseInt(customRuns) || -1 : maxRuns,
       });
 
       toast.success("Zap created successfully!");
@@ -142,7 +153,7 @@ export default function CreateZapPage() {
     <div ref={containerRef} className="min-h-[calc(100vh-64px)] p-4 md:p-8">
       <div className="container mx-auto max-w-2xl">
         {/* Header */}
-        <div ref={headerRef} className="flex items-center justify-between mb-8">
+        <div ref={headerRef} className="flex items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -159,23 +170,58 @@ export default function CreateZapPage() {
               </p>
             </div>
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={!canSave || isSaving}
-            className="gap-2"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Save Zap
-              </>
-            )}
-          </Button>
+
+          {/* Right side controls */}
+          <div className="flex items-center gap-4">
+            {/* Repeat Limit Selector */}
+            <div className="flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Select
+                value={maxRuns.toString()}
+                onValueChange={(val) => setMaxRuns(parseInt(val))}
+              >
+                <SelectTrigger className="w-28 h-9">
+                  <SelectValue placeholder="Runs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="-1">Forever</SelectItem>
+                  <SelectItem value="1">Once</SelectItem>
+                  <SelectItem value="2">Twice</SelectItem>
+                  <SelectItem value="5">5 times</SelectItem>
+                  <SelectItem value="10">10 times</SelectItem>
+                  <SelectItem value="0">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+              {maxRuns === 0 && (
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="#"
+                  value={customRuns}
+                  onChange={(e) => setCustomRuns(e.target.value)}
+                  className="w-16 h-9"
+                />
+              )}
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={!canSave || isSaving}
+              className="gap-2 h-9"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Zap
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Canvas */}

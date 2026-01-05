@@ -168,6 +168,10 @@ Quick overview:
 | --------------------- | -------------------------- |
 | `NEXT_PUBLIC_API_URL` | API URL with `/api` suffix |
 
-## 📄 License
+## 🙏 Inspiration
 
-MIT
+This project is inspired by [Zapier](https://zapier.com/), the popular workflow automation platform. FlowForge is a learning project that recreates core Zapier concepts using modern serverless technologies.
+
+## 🎓 Credits
+
+Built as part of the [100xDevs](https://100xdevs.com/) cohort to learn full-stack development with serverless architecture.

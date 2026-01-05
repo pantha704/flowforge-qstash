@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { triggerId, triggerMetadata, actions } = await req.json();
+  const { triggerId, triggerMetadata, actions, maxRuns } = await req.json();
 
   try {
     const result = await prismaClient.$transaction(async (tx) => {
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId,
           triggerId: "",
+          maxRuns: maxRuns ?? -1, // Default to forever
           actions: {
             create: actions.map((a: { availableActionId: string; actionMetadata: object }, i: number) => ({
               actionId: a.availableActionId,

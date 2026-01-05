@@ -40,7 +40,14 @@ export async function POST(req: NextRequest) {
       process.env.JWT_SECRET || "secret"
     );
 
-    return NextResponse.json({ token });
+    return NextResponse.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      }
+    });
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(

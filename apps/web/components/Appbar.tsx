@@ -30,7 +30,7 @@ export const Appbar = () => {
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
                         <Zap className="h-5 w-5 fill-current" />
                     </div>
-                    <span className="text-xl font-bold">FlowForge</span>
+                    <span className="text-2xl font-bold">FlowForge</span>
                 </div>
 
                 <div className="flex items-center gap-4">

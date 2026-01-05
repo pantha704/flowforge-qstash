@@ -17,7 +17,7 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setToken, isAuthenticated } = useAuthStore();
+  const { setAuth, isAuthenticated } = useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -49,8 +49,8 @@ export default function LoginPage() {
 
     try {
       const response = await api.signin(email, password);
-      if (response.token) {
-        setToken(response.token);
+      if (response.token && response.user) {
+        setAuth(response.token, response.user);
         toast.success("Welcome back!");
         router.push("/dashboard");
       } else {

@@ -17,7 +17,7 @@ import Link from "next/link";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { setToken, isAuthenticated } = useAuthStore();
+  const { setAuth, isAuthenticated } = useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -50,8 +50,8 @@ export default function SignupPage() {
 
     try {
       const response = await api.signup(name, email, password);
-      if (response.token) {
-        setToken(response.token);
+      if (response.token && response.user) {
+        setAuth(response.token, response.user);
         toast.success("Account created successfully!");
         router.push("/dashboard");
       } else {

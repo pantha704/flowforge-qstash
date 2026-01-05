@@ -102,5 +102,10 @@ export interface AvailableActionsResponse {
 
 export interface AuthResponse {
   token?: string;
+  user?: {
+    id: number;
+    email: string;
+    name: string | null;
+  };
   error?: string;
 }
