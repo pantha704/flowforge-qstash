@@ -7,8 +7,14 @@
 
 import { Resend } from 'resend';
 
-// Initialize Resend with API key from environment
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization helper (avoid env var access at build time)
+let resendClient: Resend | null = null;
+function getResend() {
+  if (!resendClient && process.env.RESEND_API_KEY) {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 export interface ActionMetadata {
   [key: string]: unknown;
@@ -26,14 +32,15 @@ async function sendEmail(metadata: ActionMetadata): Promise<boolean> {
   console.log(`   To: ${to}`);
   console.log(`   Subject: ${subject}`);
 
-  if (!process.env.RESEND_API_KEY) {
+  const resend = getResend();
+  if (!resend) {
     console.log(`   ⚠️ RESEND_API_KEY not set - email not sent (demo mode)`);
     return true;
   }
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'FlowForge <onboarding@resend.dev>', // Use your verified domain in production
+      from: 'FlowForge <onboarding@resend.dev>',
       to: [to],
       subject: subject || 'No Subject',
       html: `<p>${body || 'No content'}</p>`,
