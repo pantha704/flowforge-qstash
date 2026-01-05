@@ -66,28 +66,48 @@ export const useZapBuilderStore = create<ZapBuilderStore>((set) => ({
 }));
 
 // Auth store
+interface User {
+  id: number;
+  email: string;
+  name: string | null;
+}
+
 interface AuthStore {
   token: string | null;
+  user: User | null;
   isAuthenticated: boolean;
-  setToken: (token: string | null) => void;
+  setAuth: (token: string, user: User) => void;
   logout: () => void;
+}
+
+// Parse user from localStorage
+function getInitialUser(): User | null {
+  if (typeof window === "undefined") return null;
+  const userStr = localStorage.getItem("user");
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
   token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
+  user: getInitialUser(),
   isAuthenticated: typeof window !== "undefined" ? !!localStorage.getItem("token") : false,
 
-  setToken: (token) => {
-    if (token) {
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
-    }
-    set({ token, isAuthenticated: !!token });
+  setAuth: (token, user) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    set({ token, user, isAuthenticated: true });
   },
 
   logout: () => {
     localStorage.removeItem("token");
-    set({ token: null, isAuthenticated: false });
+    localStorage.removeItem("user");
+    set({ token: null, user: null, isAuthenticated: false });
   },
 }));

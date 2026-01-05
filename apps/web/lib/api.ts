@@ -96,6 +96,24 @@ class ApiClient {
       method: "DELETE",
     });
   }
+
+  // Run history
+  async getRuns(userId: number, limit = 50): Promise<{
+    success: boolean;
+    runs: Array<{
+      id: string;
+      zapId: string;
+      zapName: string;
+      status: string;
+      error: string | null;
+      metadata: Record<string, unknown>;
+      createdAt: string;
+      completedAt: string | null;
+    }>;
+    total: number;
+  }> {
+    return this.request(`/runs?userId=${userId}&limit=${limit}`);
+  }
 }
 
 export const api = new ApiClient();

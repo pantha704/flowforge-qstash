@@ -7,6 +7,7 @@ import { useGSAP } from "@gsap/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ZapCard } from "@/components/dashboard/ZapCard";
+import { RunHistory } from "@/components/dashboard/RunHistory";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -88,13 +89,16 @@ export default function DashboardPage() {
               Manage and monitor your automated workflows
             </p>
           </div>
-          <Button
-            onClick={() => router.push("/zap/create")}
-            className="flex justify-center items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Create New Zap</span>
-          </Button>
+          <div className="flex items-center">
+            <RunHistory />
+            <Button
+              onClick={() => router.push("/zap/create")}
+              className="flex justify-center items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create New Zap</span>
+            </Button>
+          </div>
         </div>
 
         {/* Loading State */}

@@ -24,10 +24,13 @@ export async function POST(
   }
 
   try {
-    // Validate the zap exists
+    // Validate the zap exists and check run limit
     const zap = await prismaClient.zap.findUnique({
       where: { id: zapId },
-      include: { actions: true },
+      include: {
+        actions: true,
+        _count: { select: { ZapRuns: true } }
+      },
     });
 
     if (!zap) {
@@ -46,15 +49,31 @@ export async function POST(
       );
     }
 
-    // Create ZapRun
+    // Check run limit
+    const runCount = zap._count.ZapRuns;
+    if (zap.maxRuns > 0 && runCount >= zap.maxRuns) {
+      console.log(`[Hook] Run limit reached: ${runCount}/${zap.maxRuns}`);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Run limit reached",
+          runCount,
+          maxRuns: zap.maxRuns
+        },
+        { status: 429 }
+      );
+    }
+
+    // Create ZapRun with pending status
     const zapRun = await prismaClient.zapRun.create({
       data: {
         zapId,
         metadata: body,
+        status: "pending",
       },
     });
 
-    console.log(`[Hook] ZapRun created: ${zapRun.id}`);
+    console.log(`[Hook] ZapRun created: ${zapRun.id} (${runCount + 1}/${zap.maxRuns === -1 ? '∞' : zap.maxRuns})`);
 
     // Check if we're in local dev mode (QStash can't call localhost)
     const isLocalDev = process.env.APP_URL?.includes("localhost");
@@ -94,6 +113,8 @@ export async function POST(
       success: true,
       message: "Hook processed successfully",
       zapRunId: zapRun.id,
+      runCount: runCount + 1,
+      maxRuns: zap.maxRuns === -1 ? "unlimited" : zap.maxRuns,
     });
   } catch (error) {
     console.error("[Hook] Error:", error);

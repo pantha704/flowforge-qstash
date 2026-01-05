@@ -12,6 +12,12 @@ async function handler(req: NextRequest) {
   console.log(`🚀 Processing ZapRun: ${zapRunId}`);
   console.log(`${"=".repeat(60)}`);
 
+  // Update status to running
+  await prismaClient.zapRun.update({
+    where: { id: zapRunId },
+    data: { status: "running" },
+  });
+
   try {
     // Fetch the zap with its actions
     const zapRun = await prismaClient.zapRun.findUnique({
@@ -34,11 +40,22 @@ async function handler(req: NextRequest) {
 
     if (!zapRun || !zapRun.zap) {
       console.error(`❌ ZapRun not found: ${zapRunId}`);
+      await prismaClient.zapRun.update({
+        where: { id: zapRunId },
+        data: {
+          status: "failed",
+          error: "ZapRun not found",
+          completedAt: new Date(),
+        },
+      });
       return NextResponse.json({ error: "ZapRun not found" }, { status: 404 });
     }
 
     console.log(`📋 Zap has ${zapRun.zap.actions.length} action(s)`);
     console.log(`📦 Trigger payload:`, zapRun.metadata);
+
+    let hasError = false;
+    let errorMessage = "";
 
     // Execute each action in order
     for (let i = 0; i < zapRun.zap.actions.length; i++) {
@@ -55,15 +72,41 @@ async function handler(req: NextRequest) {
         console.log(`✅ Action completed: ${actionName}`);
       } catch (error) {
         console.error(`❌ Action failed: ${actionName}`, error);
-        // Continue with next action
+        hasError = true;
+        errorMessage = error instanceof Error ? error.message : "Unknown error";
+        // Continue with next action (don't break)
       }
     }
 
-    console.log(`\n✨ ZapRun ${zapRunId} completed!\n`);
+    // Update final status
+    await prismaClient.zapRun.update({
+      where: { id: zapRunId },
+      data: {
+        status: hasError ? "failed" : "success",
+        error: hasError ? errorMessage : null,
+        completedAt: new Date(),
+      },
+    });
 
-    return NextResponse.json({ success: true });
+    console.log(`\n✨ ZapRun ${zapRunId} completed! Status: ${hasError ? "failed" : "success"}\n`);
+
+    return NextResponse.json({
+      success: true,
+      status: hasError ? "failed" : "success",
+    });
   } catch (error) {
     console.error("Worker error:", error);
+
+    // Update status to failed
+    await prismaClient.zapRun.update({
+      where: { id: zapRunId },
+      data: {
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error",
+        completedAt: new Date(),
+      },
+    });
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

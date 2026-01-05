@@ -23,6 +23,7 @@ model Zap {
   trigger   Trigger?
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+  maxRuns   Int      @default(-1) // -1 = forever, 1+ = limit
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   actions   Action[]
@@ -63,9 +64,12 @@ model AvailableTriggers {
 }
 
 model ZapRun {
-  id        String   @id @default(uuid())
-  zapId     String
-  metadata  Json
-  zap       Zap      @relation(fields: [zapId], references: [id])
-  createdAt DateTime @default(now())
+  id          String    @id @default(uuid())
+  zapId       String
+  metadata    Json
+  status      String    @default("pending") // pending, running, success, failed
+  error       String?
+  zap         Zap       @relation(fields: [zapId], references: [id])
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
 }
