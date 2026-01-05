@@ -83,10 +83,10 @@ export default function DashboardPage() {
           </div>
           <Button
             onClick={() => router.push("/zap/create")}
-            className="gap-2"
+            className="flex justify-center items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Create New Zap
+            <span>Create New Zap</span>
           </Button>
         </div>
 

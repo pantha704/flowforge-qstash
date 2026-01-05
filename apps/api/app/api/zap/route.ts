@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
         actions: { include: { type: true }, orderBy: { sortingOrder: "asc" } },
       },
     });
-    return NextResponse.json({ zaps });
+    return NextResponse.json({ success: true, zaps });
   } catch (error) {
     console.error("Get zaps error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

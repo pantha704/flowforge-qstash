@@ -2,6 +2,11 @@
 
 > A serverless Zapier clone using Upstash QStash instead of Kafka - optimized for free-tier cloud deployment.
 
+## 🔗 Live Demo
+
+- **Frontend**: [flowforge-qstash-web.vercel.app](https://flowforge-qstash-web.vercel.app)
+- **API**: [flowforge-qstash-api.vercel.app/api](https://flowforge-qstash-api.vercel.app/api)
+
 ## 🎯 Why QStash over Kafka?
 
 | Aspect             | Kafka                    | QStash                 |
@@ -15,29 +20,31 @@
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────-┐
-│                    QStash Architecture                       │
-├─────────────────────────────────────────────────────────────-┤
-│                                                              │
-│  [Frontend]         [API (Serverless)]                       │
-│  Next.js :3000  ──► Next.js API Routes :3001                 │
-│                     ├── /api/auth/*                          │
-│                     ├── /api/zap                             │
-│                     ├── /api/trigger/available               │
-│                     └── /api/action/available                │
-│                                                              │
-│  [External Webhook]                                          │
-│        │                                                     │
-│        ▼                                                     │
-│  /api/hooks/[userId]/[zapId]                                 │
-│        │                                                     │
-│        ├── 1. Create ZapRun in DB                            │
-│        └── 2. QStash.publish() ──────► /api/worker           │
-│                                              │               │
-│                                              ▼               │
-│                                        Execute Actions       │
-│                                        (Email, HTTP, etc.)   │
-└─────────────────────────────────────────────────────────────-┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    QStash Architecture                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  [Frontend]           [API (Serverless)]                        │
+│  Next.js :3000   ──►  Next.js API Routes :3002                  │
+│                       ├── /api/auth/*  (signup, signin)         │
+│                       ├── /api/zap     (CRUD)                   │
+│                       ├── /api/trigger/available                │
+│                       ├── /api/action/available                 │
+│                       └── /api/schedule (QStash cron)           │
+│                                                                 │
+│  [External Webhook]                                             │
+│        │                                                        │
+│        ▼                                                        │
+│  POST /api/hooks/[userId]/[zapId]                               │
+│        │                                                        │
+│        ├── 1. Create ZapRun record in DB                        │
+│        ├── 2. (Local) Call /api/worker directly                 │
+│        └── 2. (Prod) QStash.publish() → /api/worker             │
+│                                                │                │
+│                                                ▼                │
+│                                          Execute Actions        │
+│                                          (Email, HTTP, etc.)    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 **No Processor, No Kafka, No Docker!**
@@ -47,22 +54,39 @@
 ```
 flowforge-qstash/
 ├── apps/
-│   ├── web/           # Frontend (Next.js + Shadcn + GSAP)
+│   ├── web/           # Frontend (Next.js + Shadcn + TailwindCSS + GSAP)
 │   └── api/           # Serverless API (Next.js App Router)
 │       └── app/api/
-│           ├── auth/     # signup, signin
-│           ├── zap/      # CRUD
-│           ├── hooks/    # Webhook receiver → QStash
-│           └── worker/   # QStash callback (executes actions)
+│           ├── auth/       # signup, signin (bcryptjs + JWT)
+│           ├── zap/        # CRUD operations
+│           ├── hooks/      # Webhook receiver → QStash/worker
+│           ├── worker/     # QStash callback (executes actions)
+│           └── schedule/   # QStash cron scheduling
 ├── packages/
-│   ├── db/            # Prisma schema + client
-│   └── executors/     # Shared action executors
+│   ├── db/            # Prisma schema + client (PostgreSQL)
+│   └── executors/     # Shared action executors (Email, HTTP, etc.)
 └── turbo.json
 ```
 
+## ✨ Features
+
+- **Triggers**: Webhook, Schedule (Cron)
+- **Actions**: Send Email (Resend), HTTP Request, Discord/Slack webhooks
+- **Auth**: JWT-based authentication
+- **UI**: Modern glassmorphic design with GSAP animations
+- **Serverless**: Fully serverless, scales to zero
+
 ## 🚀 Quick Start
 
-### 1. Environment Setup
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/pantha704/flowforge-qstash.git
+cd flowforge-qstash
+bun install
+```
+
+### 2. Environment Setup
 
 ```bash
 # packages/db/.env
@@ -71,55 +95,78 @@ DATABASE_URL="postgresql://..."
 # apps/api/.env.local
 DATABASE_URL="postgresql://..."
 JWT_SECRET="your-secret"
-QSTASH_TOKEN="qstash_xxx"                 # From Upstash
-QSTASH_CURRENT_SIGNING_KEY="sig_xxx"      # For verifying callbacks
+QSTASH_TOKEN="qstash_xxx"                 # From Upstash Console
+QSTASH_CURRENT_SIGNING_KEY="sig_xxx"      # For webhook verification
 QSTASH_NEXT_SIGNING_KEY="sig_xxx"
-RESEND_API_KEY="re_xxx"
-APP_URL="http://localhost:3001"           # Your API URL
+RESEND_API_KEY="re_xxx"                   # From Resend.com
+APP_URL="http://localhost:3002"           # Your API URL
+
+# apps/web/.env.local
+NEXT_PUBLIC_API_URL="http://localhost:3002/api"
 ```
 
-### 2. Get QStash Credentials
+### 3. Get Credentials
 
-1. Go to [upstash.com](https://upstash.com)
-2. Create a QStash instance
-3. Copy Token and Signing Keys
+1. **QStash**: [console.upstash.com/qstash](https://console.upstash.com/qstash) - Get Token & Signing Keys
+2. **Resend**: [resend.com](https://resend.com) - Get API Key for emails
+3. **Database**: Use [Neon](https://neon.tech) or any PostgreSQL provider
 
-### 3. Run Locally
+### 4. Run Locally
 
 ```bash
-# Install dependencies
-bun install
-
 # Generate Prisma client
 cd packages/db && bunx prisma generate && cd ../..
+
+# Seed the database (optional)
+cd packages/db && bunx prisma db push && cd ../..
 
 # Start both apps
 bun run dev
 ```
 
 - Frontend: http://localhost:3000
-- API: http://localhost:3001
+- API: http://localhost:3002
 
-### 4. Test Webhook
+### 5. Test Webhook
+
+After creating a Zap, you'll get a webhook URL. Test it with:
 
 ```bash
-curl -X POST "http://localhost:3001/api/hooks/1/your-zap-id" \
+curl -X POST "http://localhost:3002/api/hooks/{userId}/{zapId}" \
   -H "Content-Type: application/json" \
-  -d '{"event": "test"}'
+  -d '{"event": "test", "message": "Hello FlowForge!"}'
 ```
 
-> **Note**: QStash verification is enabled by default. For local testing without QStash, temporarily export the handler directly in `/api/worker/route.ts`.
+## 🌐 Deployment (Vercel)
 
-## 🌐 Deployment
+See [DEPLOY.md](./DEPLOY.md) for detailed instructions.
 
-Deploy both apps to Vercel:
+Quick overview:
 
-```bash
-# Deploy from root
-vercel --prod
-```
+1. Create 2 Vercel projects: `flowforge-api` and `flowforge-web`
+2. Set root directory to `apps/api` and `apps/web` respectively
+3. Configure environment variables
+4. Deploy!
 
-Set environment variables in Vercel dashboard for both apps.
+## 📋 Environment Variables
+
+### API (apps/api)
+
+| Variable                     | Description                               |
+| ---------------------------- | ----------------------------------------- |
+| `DATABASE_URL`               | PostgreSQL connection string              |
+| `JWT_SECRET`                 | Secret for JWT tokens                     |
+| `QSTASH_TOKEN`               | Upstash QStash token                      |
+| `QSTASH_CURRENT_SIGNING_KEY` | For webhook verification                  |
+| `QSTASH_NEXT_SIGNING_KEY`    | Rotated signing key                       |
+| `RESEND_API_KEY`             | Resend API key for emails                 |
+| `APP_URL`                    | Your deployed API URL (no trailing slash) |
+
+### Web (apps/web)
+
+| Variable              | Description                |
+| --------------------- | -------------------------- |
+| `NEXT_PUBLIC_API_URL` | API URL with `/api` suffix |
 
 ## 📄 License
 

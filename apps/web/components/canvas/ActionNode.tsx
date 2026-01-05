@@ -2,7 +2,6 @@
 
 import { useRef, useEffect } from "react";
 import gsap from "gsap";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MetadataForm } from "./MetadataForm";
 import { useZapBuilderStore } from "@/lib/store";
@@ -20,20 +19,17 @@ export function ActionNode({ action, index }: ActionNodeProps) {
 
   useEffect(() => {
     if (cardRef.current) {
-      gsap.from(cardRef.current, {
-        height: 0,
-        opacity: 0,
-        scale: 0.95,
-        duration: 0.4,
-        ease: "power2.out",
-      });
+      gsap.fromTo(
+        cardRef.current,
+        { opacity: 0, scale: 0.95, y: 20 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out" }
+      );
     }
   }, []);
 
   const handleDelete = () => {
     if (cardRef.current) {
       gsap.to(cardRef.current, {
-        height: 0,
         opacity: 0,
         scale: 0.95,
         duration: 0.3,
@@ -46,39 +42,39 @@ export function ActionNode({ action, index }: ActionNodeProps) {
   return (
     <Card
       ref={cardRef}
-      className="p-5 bg-card/80 backdrop-blur-sm border-border/50 transition-all hover:border-primary/30"
+      className="p-6 bg-card/80 backdrop-blur-sm border-border/50 transition-all hover:border-cyan-500/30"
     >
       <div className="flex items-start gap-4">
         {/* Drag Handle */}
         <div className="flex flex-col items-center gap-1 pt-1 cursor-grab text-muted-foreground/50 hover:text-muted-foreground">
-          <GripVertical className="h-4 w-4" />
-          <span className="text-[10px] font-mono">{index + 1}</span>
+          <GripVertical className="h-5 w-5" />
+          <span className="text-xs font-mono font-medium">{index + 1}</span>
         </div>
 
         {/* Action Icon */}
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground shrink-0">
-          <Zap className="h-5 w-5" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-amber-500/20 text-amber-500 shrink-0">
+          <Zap className="h-7 w-7" />
         </div>
 
         {/* Action Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
                 Action
               </p>
-              <h4 className="font-semibold truncate">
+              <h4 className="font-semibold text-lg truncate">
                 {action.availableAction.name}
               </h4>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+            <button
+              type="button"
+              className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
               onClick={handleDelete}
+              title="Remove action"
             >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+              <Trash2 className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Metadata Form */}

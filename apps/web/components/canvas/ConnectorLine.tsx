@@ -29,6 +29,9 @@ export function ConnectorLine({ height = 60 }: ConnectorLineProps) {
     }
   }, []);
 
+  // Use explicit cyan-500 hex color (#06b6d4) for reliable SVG rendering
+  const cyanColor = "#06b6d4";
+
   return (
     <div className="flex justify-center my-2">
       <svg
@@ -40,8 +43,8 @@ export function ConnectorLine({ height = 60 }: ConnectorLineProps) {
       >
         <defs>
           <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(var(--primary))" />
-            <stop offset="100%" stopColor="hsl(var(--primary) / 0.5)" />
+            <stop offset="0%" stopColor={cyanColor} />
+            <stop offset="100%" stopColor={cyanColor} stopOpacity="0.5" />
           </linearGradient>
         </defs>
         <path
@@ -55,8 +58,8 @@ export function ConnectorLine({ height = 60 }: ConnectorLineProps) {
         <circle
           cx="20"
           cy={height - 2}
-          r="3"
-          fill="hsl(var(--primary))"
+          r="4"
+          fill={cyanColor}
           className="animate-pulse"
         />
       </svg>

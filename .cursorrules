@@ -1,0 +1,58 @@
+# Project: FlowForge (Zapier Clone Frontend)
+
+# Role: Senior Frontend Architect & GSAP Animation Specialist
+
+## 1. Core Philosophy & Stack
+
+You are building a production-grade, event-driven automation platform.
+
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript (Strict Mode)
+- **Styling:** Tailwind CSS + Shadcn UI (Zinc Base, Cyan Accent, Dark Mode Default)
+- **Animation:** GSAP (GreenSock) - _Mandatory for all page transitions and complex interactions._
+- **State:** Recoil (for Zap Builder state)
+- **Data Fetching:** SWR or React Query (Axios for mutations)
+
+## 2. "Antigravity" Agent Instructions
+
+- **Artifacts First:** Before writing code for the Zap Builder, generate a **"State Logic Artifact"** that maps out exactly how `Trigger -> Action A -> Action B` data flows.
+- **No Hallucinations:** You must read the `@schema.prisma` file in the backend folder. Do not guess field names. If the schema has `availableTriggerId`, do not write `triggerId`.
+- **No Mock Data:** Never generate `data.json` files. Always write the `axios.get()` calls to hitting the backend endpoints (`http://localhost:3000/api/v1/...`).
+
+## 3. Detailed Feature Specs
+
+### A. The Zap Builder Canvas (`/zap/create`)
+
+_This is the core differentiator. It must look like a futuristic flowchart._
+
+- **Visuals:** A vertical timeline with a glowing gradient line connecting nodes.
+- **Motion (GSAP):** - When a user adds a step, use `Flip.from()` to animate the new card expanding into place.
+  - The connecting line should "draw" itself using SVG `stroke-dashoffset` animation.
+- **Interaction:** - Clicking a node opens a `Sheet` (Side drawer) or `Dialog` (Modal) for configuration.
+  - While loading available triggers, show a custom Skeleton that looks like the node structure.
+
+### B. Landing Page
+
+- **Hero:** Use `ScrollTrigger` to pin the hero section and have the text "FlowForge" dissolve into the dashboard preview as the user scrolls.
+- **Background:** Subtle particle animation or a "grid moving in 3D space" effect.
+
+## 4. Coding Standards
+
+- **Components:** Create small, isolated components in `/components/zap-builder/*` (e.g., `NodeCard.tsx`, `Connector.tsx`, `ConfigPanel.tsx`).
+- **Error Handling:** Wrap all API calls in `try/catch` and use `sonner` (toast) to alert the user of failures.
+- **Types:** All props must be typed. Use `zod` for form validation in the config panels.
+
+## 5. Directory Structure Enforcement
+
+```text
+/app
+  /dashboard
+  /zap
+    /create
+/components
+  /ui       <-- Shadcn primitives here
+  /builder  <-- Zap builder specific components
+  /landing  <-- Landing page sections
+/store      <-- Recoil atoms
+/hooks      <-- Custom hooks (useAvailableTriggers, useZapMutation)
+```
