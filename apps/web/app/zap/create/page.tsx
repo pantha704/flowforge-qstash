@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { TriggerNode } from "@/components/canvas/TriggerNode";
 import { ActionNode } from "@/components/canvas/ActionNode";
 import { ConnectorLine } from "@/components/canvas/ConnectorLine";
-import { AddNodeButton } from "@/components/canvas/AddNodeButton";
+import { ButtonPair } from "@/components/canvas/ButtonPair";
 import { api } from "@/lib/api";
 import { useZapBuilderStore, useAuthStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -53,6 +53,52 @@ export default function CreateZapPage() {
     { scope: containerRef }
   );
 
+  // Validation: check if all required metadata fields are filled
+  const validateMetadata = () => {
+    // Check trigger metadata for Schedule (Cron)
+    if (selectedTrigger?.name === "Schedule (Cron)") {
+      if (!triggerMetadata.cronExpression) {
+        toast.error("Please select a schedule frequency");
+        return false;
+      }
+    }
+
+    // Check action metadata
+    for (const action of actions) {
+      const actionName = action.availableAction.name;
+      const metadata = action.actionMetadata;
+
+      if (actionName === "Send Email") {
+        if (!metadata.to || !metadata.subject || !metadata.body) {
+          toast.error(`Please fill in all required fields for "${actionName}"`);
+          return false;
+        }
+      } else if (actionName === "Send Slack Message") {
+        if (!metadata.channel || !metadata.message) {
+          toast.error(`Please fill in all required fields for "${actionName}"`);
+          return false;
+        }
+      } else if (actionName === "Send Discord Message") {
+        if (!metadata.webhookUrl || !metadata.message) {
+          toast.error(`Please fill in all required fields for "${actionName}"`);
+          return false;
+        }
+      } else if (actionName === "Send SMS") {
+        if (!metadata.phoneNumber || !metadata.message) {
+          toast.error(`Please fill in all required fields for "${actionName}"`);
+          return false;
+        }
+      } else if (actionName === "HTTP Request") {
+        if (!metadata.url) {
+          toast.error(`Please fill in the URL for "${actionName}"`);
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
   const handleSave = async () => {
     if (!selectedTrigger) {
       toast.error("Please select a trigger");
@@ -61,6 +107,10 @@ export default function CreateZapPage() {
 
     if (actions.length === 0) {
       toast.error("Please add at least one action");
+      return;
+    }
+
+    if (!validateMetadata()) {
       return;
     }
 
@@ -86,7 +136,7 @@ export default function CreateZapPage() {
     }
   };
 
-  const canSave = selectedTrigger && actions.length > 0;
+  const canSave = !!(selectedTrigger && actions.length > 0);
 
   return (
     <div ref={containerRef} className="min-h-[calc(100vh-64px)] p-4 md:p-8">
@@ -146,16 +196,18 @@ export default function CreateZapPage() {
           {actions.map((action, index) => (
             <div key={action.id} className="w-full max-w-lg">
               <ActionNode action={action} index={index} />
-              <div className="flex justify-center">
-                <ConnectorLine height={40} />
-              </div>
             </div>
           ))}
 
-          {/* Add Action Button */}
+          {/* Add Action Button + Save Button with liquid split animation */}
           {selectedTrigger && (
             <div className="py-4">
-              <AddNodeButton />
+              <ButtonPair
+                hasActions={actions.length > 0}
+                onSave={handleSave}
+                canSave={canSave}
+                isSaving={isSaving}
+              />
             </div>
           )}
 

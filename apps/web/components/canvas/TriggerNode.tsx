@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MetadataForm } from "./MetadataForm";
 import { api } from "@/lib/api";
 import { useZapBuilderStore } from "@/lib/store";
-import { Zap, Search, ChevronRight, Edit2 } from "lucide-react";
+import { getTriggerStyle } from "@/lib/type-styles";
+import { Search, ChevronRight } from "lucide-react";
 import type { AvailableTrigger } from "@/lib/types";
 
 export function TriggerNode() {
@@ -65,6 +66,10 @@ export function TriggerNode() {
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Get style for selected trigger
+  const selectedStyle = selectedTrigger ? getTriggerStyle(selectedTrigger.name) : getTriggerStyle("");
+  const SelectedIcon = selectedStyle.icon;
+
   return (
     <>
       <Card
@@ -76,8 +81,8 @@ export function TriggerNode() {
           className="flex items-center gap-4 cursor-pointer"
           onClick={() => setIsOpen(true)}
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-500 shrink-0">
-            <Zap className="h-7 w-7" />
+          <div className={`flex h-14 w-14 items-center justify-center rounded-xl ${selectedStyle.bg} ${selectedStyle.text} shrink-0`}>
+            <SelectedIcon className="h-7 w-7" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 font-medium">
@@ -88,18 +93,6 @@ export function TriggerNode() {
             </h3>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {selectedTrigger && (
-              <button
-                type="button"
-                className="p-2 rounded-lg text-muted-foreground hover:text-cyan-500 hover:bg-cyan-500/10 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(true);
-                }}
-              >
-                <Edit2 className="h-5 w-5" />
-              </button>
-            )}
             <ChevronRight className="h-6 w-6 text-muted-foreground" />
           </div>
         </div>
@@ -140,21 +133,25 @@ export function TriggerNode() {
                 <Skeleton key={i} className="h-16 w-full rounded-lg" />
               ))
             ) : filteredTriggers.length > 0 ? (
-              filteredTriggers.map((trigger) => (
-                <button
-                  key={trigger.id}
-                  type="button"
-                  className="w-full text-left py-4 px-4 rounded-lg hover:bg-cyan-500/10 transition-colors cursor-pointer border-0 bg-transparent"
-                  onClick={() => handleSelectTrigger(trigger)}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-500 shrink-0">
-                      <Zap className="h-6 w-6" />
+              filteredTriggers.map((trigger) => {
+                const style = getTriggerStyle(trigger.name);
+                const Icon = style.icon;
+                return (
+                  <button
+                    key={trigger.id}
+                    type="button"
+                    className={`w-full text-left py-4 px-4 rounded-lg hover:${style.bg} transition-colors cursor-pointer border-0 bg-transparent`}
+                    onClick={() => handleSelectTrigger(trigger)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.bg} ${style.text} shrink-0`}>
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <span className="font-medium text-base text-foreground">{trigger.name}</span>
                     </div>
-                    <span className="font-medium text-base text-foreground">{trigger.name}</span>
-                  </div>
-                </button>
-              ))
+                  </button>
+                );
+              })
             ) : (
               <p className="text-center text-muted-foreground py-8 text-base">
                 No triggers found

@@ -9,9 +9,43 @@ export async function POST(
   { params }: { params: Promise<{ userId: string; zapId: string }> }
 ) {
   const { userId, zapId } = await params;
-  const body = await req.json();
+
+  console.log(`[Hook] Received webhook for user ${userId}, zap ${zapId}`);
+
+  // Parse body - handle empty or invalid JSON
+  let body = {};
+  try {
+    const text = await req.text();
+    if (text) {
+      body = JSON.parse(text);
+    }
+  } catch (e) {
+    console.log("[Hook] No JSON body or invalid JSON, using empty object");
+  }
 
   try {
+    // Validate the zap exists
+    const zap = await prismaClient.zap.findUnique({
+      where: { id: zapId },
+      include: { actions: true },
+    });
+
+    if (!zap) {
+      console.error(`[Hook] Zap not found: ${zapId}`);
+      return NextResponse.json(
+        { success: false, error: "Zap not found" },
+        { status: 404 }
+      );
+    }
+
+    if (zap.userId !== parseInt(userId)) {
+      console.error(`[Hook] User mismatch: expected ${zap.userId}, got ${userId}`);
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
+
     // Create ZapRun
     const zapRun = await prismaClient.zapRun.create({
       data: {
@@ -40,6 +74,15 @@ export async function POST(
     } else {
       // For production: publish to QStash
       console.log(`[Hook] Publishing to QStash for processing`);
+
+      if (!process.env.QSTASH_TOKEN) {
+        console.error("[Hook] QSTASH_TOKEN not configured");
+        return NextResponse.json(
+          { success: false, error: "QStash not configured" },
+          { status: 500 }
+        );
+      }
+
       await qstash.publishJSON({
         url: `${process.env.APP_URL}/api/worker`,
         body: { zapRunId: zapRun.id },
@@ -55,7 +98,11 @@ export async function POST(
   } catch (error) {
     console.error("[Hook] Error:", error);
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      {
+        success: false,
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }

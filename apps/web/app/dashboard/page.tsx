@@ -44,17 +44,24 @@ export default function DashboardPage() {
     fetchZaps();
   }, [isAuthenticated, router]);
 
+  const hasAnimated = useRef(false);
+
   useGSAP(
     () => {
-      if (!isLoading && cardsRef.current) {
+      if (!isLoading && cardsRef.current && zaps.length > 0 && !hasAnimated.current) {
+        hasAnimated.current = true;
         const cards = cardsRef.current.querySelectorAll(".zap-card");
-        gsap.from(cards, {
-          y: 30,
-          opacity: 0,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: "power3.out",
-        });
+        gsap.fromTo(
+          cards,
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power3.out",
+          }
+        );
       }
     },
     { scope: containerRef, dependencies: [isLoading, zaps] }

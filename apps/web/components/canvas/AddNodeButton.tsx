@@ -16,7 +16,11 @@ import { useZapBuilderStore } from "@/lib/store";
 import { Plus, Search, Zap } from "lucide-react";
 import type { AvailableAction } from "@/lib/types";
 
-export function AddNodeButton() {
+interface AddNodeButtonProps {
+  hasActions?: boolean;
+}
+
+export function AddNodeButton({ hasActions = false }: AddNodeButtonProps) {
   const { addAction } = useZapBuilderStore();
   const [isOpen, setIsOpen] = useState(false);
   const [actions, setActions] = useState<AvailableAction[]>([]);
@@ -30,16 +34,34 @@ export function AddNodeButton() {
     }
   }, [isOpen]);
 
-  // Entrance animation - use fromTo to explicitly set end state
+  // Entrance animation
   useEffect(() => {
     if (buttonRef.current) {
       gsap.fromTo(
         buttonRef.current,
         { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.7)" }
+        { scale: 1, opacity: 1, duration: 0.5, ease: "elastic.out(1, 0.5)" }
       );
     }
   }, []);
+
+  // Style transition animation when hasActions changes
+  useEffect(() => {
+    if (buttonRef.current) {
+      gsap.to(buttonRef.current, {
+        scale: 1.1,
+        duration: 0.15,
+        ease: "power2.out",
+        onComplete: () => {
+          gsap.to(buttonRef.current, {
+            scale: 1,
+            duration: 0.3,
+            ease: "elastic.out(1, 0.5)",
+          });
+        },
+      });
+    }
+  }, [hasActions]);
 
   const fetchActions = async () => {
     setIsLoading(true);
@@ -64,16 +86,25 @@ export function AddNodeButton() {
     a.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Filled style (when no actions)
+  const filledStyle = "w-16 h-16 rounded-full bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40 transition-all duration-300 flex items-center justify-center cursor-pointer border-0 outline-none hover:scale-105";
+
+  // Dotted style (when has actions)
+  const dottedStyle = "w-16 h-16 rounded-full text-cyan-500 hover:text-cyan-400 bg-transparent hover:bg-cyan-500/10 transition-all duration-300 flex items-center justify-center cursor-pointer outline-none hover:scale-105";
+
+  const dottedBorderSvg = `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='100' ry='100' stroke='%2306b6d4' stroke-width='2' stroke-dasharray='6%2c 8' stroke-dashoffset='0' stroke-linecap='round'/%3e%3c/svg%3e")`;
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <button
           ref={buttonRef}
           type="button"
-          className="w-16 h-16 rounded-full bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40 transition-all duration-200 flex items-center justify-center cursor-pointer border-0 outline-none hover:scale-105"
+          className={hasActions ? dottedStyle : filledStyle}
+          style={hasActions ? { backgroundImage: dottedBorderSvg } : undefined}
           title="Add an action"
         >
-          <Plus className="w-8 h-8" strokeWidth={2.5} />
+          <Plus className={hasActions ? "w-6 h-6" : "w-8 h-8"} strokeWidth={hasActions ? 2 : 2.5} />
         </button>
       </DialogTrigger>
 

@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Figtree } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Appbar } from "@/components/Appbar";
-import { Toaster } from "sonner";
+import { ThemedToaster } from "@/components/ThemedToaster";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
@@ -40,7 +40,7 @@ export default function RootLayout({
           >
             <Appbar />
             {children}
-            <Toaster richColors position="bottom-right" />
+            <ThemedToaster />
           </ThemeProvider>
       </body>
     </html>

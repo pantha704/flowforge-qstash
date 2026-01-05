@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ModeToggle } from "./mode-toggle";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
-import { Zap, LogOut } from "lucide-react";
+import { Zap, LogOut, BookOpen } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 
 export const Appbar = () => {
@@ -34,6 +34,17 @@ export const Appbar = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* API Docs Button - Always visible */}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push("/docs")}
+                        className="text-muted-foreground hover:text-primary transition-colors font-medium"
+                    >
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        API
+                    </Button>
+
                     {mounted && isAuthenticated ? (
                         <>
                             <Button

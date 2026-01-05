@@ -1,11 +1,18 @@
 "use client";
 
 import React, { useRef } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { ArrowRight, Zap, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Zap, CheckCircle2, Mail, Database, GitBranch, Bell, Clock, Webhook, Settings } from "lucide-react";
+import { SparklesCore } from "@/components/ui/sparkles";
+import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
+import { useAuthStore } from "@/lib/store";
 
 export default function Hero() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -78,16 +85,32 @@ export default function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex flex-col items-center justify-start overflow-hidden bg-background pt-40 pb-20"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background py-20"
     >
       {/* Background Gradients */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10 mix-blend-screen dark:mix-blend-lighten opacity-50" />
 
       <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
-        <div className="space-y-6 max-w-4xl mx-auto">
-          <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-foreground backdrop-blur-sm mb-6 transition-transform hover:scale-105 cursor-default hover:border-white/20 hover:bg-white/10">
-            <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse shadow-[0_0_10px_0_theme(colors.primary.DEFAULT)]"></span>
-            New Features Available
+        <div className="space-y-10 max-w-4xl mx-auto z-20">
+          {/* "Not backed by Y Combinator" Badge */}
+          <div className="flex justify-center mb-12 -mt-4">
+            <HoverBorderGradient
+              containerClassName="rounded-full"
+              as="div"
+              duration={1}
+              clockwise={false}
+              className="dark:bg-black bg-white text-black dark:text-white flex items-center space-x-2 px-4 py-2"
+            >
+              <span className="text-muted-foreground text-sm">Not backed by</span>
+              <Image
+                src="/image.png"
+                alt="Y Combinator"
+                width={24}
+                height={24}
+                className="rounded-sm"
+              />
+              <span className="font-semibold text-white">Combinator</span>
+            </HoverBorderGradient>
           </div>
 
           <h1
@@ -109,27 +132,89 @@ export default function Hero() {
             ref={buttonsRef}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8"
           >
-            <button className="group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-full bg-primary px-8 font-medium text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:scale-105 hover:shadow-[0_0_20px_0_theme(colors.primary.DEFAULT/30%)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-              <span className="mr-2">Get Started Free</span>
+            <button
+              onClick={() => router.push(isAuthenticated ? "/dashboard" : "/signup")}
+              className="group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-full bg-primary px-8 font-medium text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:scale-105 hover:shadow-[0_0_20px_0_theme(colors.primary.DEFAULT/30%)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              <span className="mr-2">{isAuthenticated ? "Go to Dashboard" : "Get Started Free"}</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
-            <button className="inline-flex h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-8 font-medium shadow-sm transition-all hover:bg-white/10 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm">
+            <button
+              onClick={() => router.push("/docs")}
+              className="inline-flex h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-8 font-medium shadow-sm transition-all hover:bg-white/10 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm"
+            >
               View Documentation
             </button>
+          </div>
+
+          {/* Sparkles Effect */}
+          <div className="flex justify-center w-full mt-12">
+            <div className="w-[100rem] max-w-full h-72 relative">
+              {/* Gradients */}
+              <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-cyan-500 to-transparent h-[2px] w-[85%] blur-sm" />
+              <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-cyan-500 to-transparent h-px w-[85%]" />
+              <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-[5px] w-[40%] blur-sm" />
+              <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-px w-[40%]" />
+
+              {/* Core component */}
+              <SparklesCore
+                background="transparent"
+                minSize={0.4}
+                maxSize={1}
+                particleDensity={1200}
+                className="w-full h-full"
+                particleColor="#FFFFFF"
+              />
+
+              {/* Radial Gradient to prevent sharp edges */}
+              <div className="absolute inset-0 w-full h-full bg-background [mask-image:radial-gradient(500px_300px_at_top,transparent_20%,white)]"></div>
+            </div>
           </div>
         </div>
 
         {/* Decorative Floating Elements */}
         <div
           ref={decorativeRef}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none -z-20 opacity-40 max-w-[1400px]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-10 opacity-40 max-w-[1400px]"
         >
-          {/* Example Icons floating - Positioned further out */}
-          <div className="absolute top-[20%] left-[5%] p-4 bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-float-slow hidden lg:block">
-             <Zap className="w-8 h-8 text-foreground/80" />
+          {/* Row 1: Settings - Left (curved in from edge) */}
+          <div className="absolute top-[15%] left-[10%] p-3 mt-2 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
+             <Settings className="w-6 h-6 text-rose-400" />
           </div>
-          <div className="absolute top-[30%] right-[5%] p-4 bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-float-medium hidden lg:block">
-             <CheckCircle2 className="w-8 h-8 text-foreground/80" />
+
+          {/* Row 2: CheckCircle - Right (curved in from edge) */}
+          <div className="absolute top-[20%] right-[7%] p-4 mt-2 bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-float-slow hidden lg:block">
+             <CheckCircle2 className="w-8 h-8 text-green-400" />
+          </div>
+
+          {/* Row 3: Zap - Left (widest point) */}
+          <div className="absolute top-[35%] left-[3%] p-4 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-float-fast hidden lg:block">
+             <Zap className="w-8 h-8 text-cyan-400" />
+          </div>
+
+          {/* Row 4: Database - Right (widest point) */}
+          <div className="absolute top-[40%] right-[3%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
+             <Database className="w-6 h-6 text-purple-400" />
+          </div>
+
+          {/* Row 5: Mail - Left (middle) */}
+          <div className="absolute top-[55%] left-[4%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-slow hidden lg:block">
+             <Mail className="w-6 h-6 text-blue-400" />
+          </div>
+
+          {/* Row 6: Bell - Right (middle) */}
+          <div className="absolute top-[58%] right-[4%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-fast hidden lg:block">
+             <Bell className="w-6 h-6 text-yellow-400" />
+          </div>
+
+          {/* Row 7: GitBranch - Left (curving back in) */}
+          <div className="absolute top-[72%] left-[8%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
+             <GitBranch className="w-6 h-6 text-orange-400" />
+          </div>
+
+          {/* Row 8: Webhook - Right (curving back in) */}
+          <div className="absolute top-[75%] right-[8%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-slow hidden lg:block">
+             <Webhook className="w-5 h-5 text-teal-400" />
           </div>
         </div>
       </div>
