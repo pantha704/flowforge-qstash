@@ -4,8 +4,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch"
+    "build": "echo 'No build needed - source used directly'",
+    "dev": "echo 'No dev needed'"
   },
   "dependencies": {
     "resend": "^6.6.0"
