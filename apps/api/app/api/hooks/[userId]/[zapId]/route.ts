@@ -22,30 +22,14 @@ export async function POST(
 
     console.log(`[Hook] ZapRun created: ${zapRun.id}`);
 
-    // Check if we're in local dev mode (QStash can't call localhost)
-    const isLocalDev = process.env.APP_URL?.includes("localhost");
+    // Publish to QStash - it will call our worker endpoint
+    await qstash.publishJSON({
+      url: `${process.env.APP_URL}/api/worker`,
+      body: { zapRunId: zapRun.id },
+      retries: 3,
+    });
 
-    if (isLocalDev) {
-      // For local development: call worker directly
-      console.log(`[Hook] Local mode - calling worker directly`);
-      const workerResponse = await fetch(
-        `${process.env.APP_URL}/api/worker`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ zapRunId: zapRun.id }),
-        }
-      );
-      console.log(`[Hook] Worker response: ${workerResponse.status}`);
-    } else {
-      // For production: publish to QStash
-      console.log(`[Hook] Publishing to QStash for processing`);
-      await qstash.publishJSON({
-        url: `${process.env.APP_URL}/api/worker`,
-        body: { zapRunId: zapRun.id },
-        retries: 3,
-      });
-    }
+    console.log(`[Hook] Published to QStash for processing`);
 
     return NextResponse.json({
       success: true,

@@ -4,27 +4,46 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json();
-
-  if (!email || !password) {
-    return NextResponse.json({ error: "Missing email or password" }, { status: 400 });
-  }
-
   try {
-    const user = await prismaClient.user.findUnique({ where: { email } });
+    const { email, password } = await req.json();
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prismaClient.user.findUnique({
+      where: { email },
+    });
+
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET || "secret"
+    );
+
     return NextResponse.json({ token });
   } catch (error) {
     console.error("Signin error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
