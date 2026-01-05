@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && bun run build --filter=api",
+  "buildCommand": "cd ../.. && bun install && cd packages/db && bunx prisma generate && cd ../.. && bun run build --filter=api",
   "installCommand": "cd ../.. && bun install",
   "framework": "nextjs",
   "outputDirectory": ".next"
