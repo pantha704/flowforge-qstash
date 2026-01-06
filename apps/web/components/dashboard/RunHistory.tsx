@@ -106,7 +106,7 @@ export function RunHistory() {
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-3 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
+        <div className="mt-6 space-y-3 max-h-[calc(100vh-120px)] overflow-y-auto px-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
