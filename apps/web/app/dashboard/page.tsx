@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ZapCard } from "@/components/dashboard/ZapCard";
 import { RunHistory } from "@/components/dashboard/RunHistory";
+import { ConnectionsPanel } from "@/components/dashboard/ConnectionsPanel";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -100,6 +101,9 @@ export default function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {/* Connected Accounts */}
+        <ConnectionsPanel />
 
         {/* Loading State */}
         {isLoading && (
