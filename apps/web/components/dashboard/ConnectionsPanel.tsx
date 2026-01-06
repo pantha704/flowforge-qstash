@@ -64,7 +64,7 @@ export function ConnectionsPanel() {
     try {
       await api.disconnectProvider(provider);
       setConnections((prev) => prev.filter((c) => c.provider !== provider));
-      toast.success(`${provider} disconnected`);
+      toast.success(`${provider.charAt(0).toUpperCase() + provider.slice(1)} disconnected`);
     } catch (error) {
       toast.error("Failed to disconnect");
     }
