@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import crypto from "crypto";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 /**
  * POST /api/auth/forgot-password - Send password reset email
  */
@@ -49,7 +47,9 @@ export async function POST(req: NextRequest) {
     // Send email
     const resetUrl = `${process.env.NEXT_PUBLIC_WEB_URL || "http://localhost:3000"}/reset-password?token=${token}`;
 
-    if (resend) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      const resend = new Resend(resendApiKey);
       await resend.emails.send({
         from: "FlowForge <onboarding@resend.dev>",
         to: [email],
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       });
       console.log(`✅ Password reset email sent to: ${email}`);
     } else {
-      console.log(`⚠️ Resend not configured. Reset URL: ${resetUrl}`);
+      console.log(`⚠️ RESEND_API_KEY not configured. Reset URL: ${resetUrl}`);
     }
 
     return NextResponse.json({ success: true, message: "If an account exists, a reset email has been sent" });
@@ -82,3 +82,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to send reset email" }, { status: 500 });
   }
 }
+
