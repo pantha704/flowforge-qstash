@@ -25,6 +25,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if user has a password (social login users don't)
+    if (!user.password) {
+      return NextResponse.json(
+        { error: "Please sign in with Google or GitHub" },
+        { status: 401 }
+      );
+    }
+
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return NextResponse.json(
