@@ -51,6 +51,17 @@ async function handler(req: NextRequest) {
       return NextResponse.json({ error: "ZapRun not found" }, { status: 404 });
     }
 
+    // Fetch user's Google OAuth token for Sheets/Drive actions
+    let googleAccessToken: string | null = null;
+    const userId = zapRun.zap.userId;
+    const googleConnection = await prismaClient.userConnection.findUnique({
+      where: { userId_provider: { userId, provider: "google" } },
+    });
+    if (googleConnection) {
+      googleAccessToken = googleConnection.accessToken;
+      console.log(`🔑 Google OAuth token available for user ${userId}`);
+    }
+
     console.log(`📋 Zap has ${zapRun.zap.actions.length} action(s)`);
     console.log(`📦 Trigger payload:`, zapRun.metadata);
 
@@ -62,6 +73,11 @@ async function handler(req: NextRequest) {
       const action = zapRun.zap.actions[i]!;
       const actionName = action.type.name;
       const metadata = action.metadata as Record<string, unknown>;
+
+      // Inject OAuth tokens for Google-related actions
+      if (actionName === "Create Spreadsheet Row" && googleAccessToken) {
+        metadata._googleAccessToken = googleAccessToken;
+      }
 
       console.log(
         `\n--- Action ${i + 1}/${zapRun.zap.actions.length}: ${actionName} ---`
@@ -77,6 +93,7 @@ async function handler(req: NextRequest) {
         // Continue with next action (don't break)
       }
     }
+
 
     // Update final status
     await prismaClient.zapRun.update({

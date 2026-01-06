@@ -164,25 +164,66 @@ async function sendSms(metadata: ActionMetadata): Promise<boolean> {
 }
 
 /**
- * Create Spreadsheet Row - Demo mode
+ * Create Spreadsheet Row - Uses Google Sheets API with OAuth
  */
 async function createSpreadsheetRow(metadata: ActionMetadata): Promise<boolean> {
-  const { spreadsheetId, sheetName, values } = metadata as {
+  const { spreadsheetId, sheetName, values, _googleAccessToken } = metadata as {
     spreadsheetId: string;
     sheetName: string;
     values: string;
+    _googleAccessToken?: string;
   };
 
   console.log(`📊 [Create Spreadsheet Row]`);
-  console.log(`   Sheet: ${spreadsheetId}/${sheetName}`);
+  console.log(`   Sheet: ${spreadsheetId}/${sheetName || 'Sheet1'}`);
   console.log(`   Values: ${values}`);
-  console.log(`   ⚠️ Spreadsheet API not configured - demo mode`);
 
-  return true;
+  if (!_googleAccessToken) {
+    console.log(`   ⚠️ No Google OAuth token - user needs to connect Google`);
+    return true;
+  }
+
+  if (!spreadsheetId) {
+    console.log(`   ⚠️ No spreadsheet ID provided - skipping`);
+    return true;
+  }
+
+  try {
+    // Parse values (comma-separated)
+    const rowValues = values.split(',').map(v => v.trim());
+    const range = `${sheetName || 'Sheet1'}!A:Z`;
+
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${_googleAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          values: [rowValues],
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`   ❌ Sheets API error:`, result);
+      throw new Error(result.error?.message || "Sheets API error");
+    }
+
+    console.log(`   ✅ Row added to ${result.updates?.updatedRange || range}`);
+    return true;
+  } catch (error) {
+    console.error(`   ❌ Failed to add spreadsheet row:`, error);
+    throw error;
+  }
 }
 
 /**
- * Create Notion Page - Demo mode
+ * Create Notion Page - Uses Notion API
  */
 async function createNotionPage(metadata: ActionMetadata): Promise<boolean> {
   const { databaseId, title, content } = metadata as {
@@ -194,13 +235,62 @@ async function createNotionPage(metadata: ActionMetadata): Promise<boolean> {
   console.log(`📝 [Create Notion Page]`);
   console.log(`   Database: ${databaseId}`);
   console.log(`   Title: ${title}`);
-  console.log(`   ⚠️ Notion API not configured - demo mode`);
 
-  return true;
+  const notionKey = process.env.NOTION_API_KEY;
+  if (!notionKey) {
+    console.log(`   ⚠️ NOTION_API_KEY not set - skipping`);
+    return true;
+  }
+
+  if (!databaseId) {
+    console.log(`   ⚠️ No database ID provided - skipping`);
+    return true;
+  }
+
+  try {
+    const response = await fetch("https://api.notion.com/v1/pages", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${notionKey}`,
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28",
+      },
+      body: JSON.stringify({
+        parent: { database_id: databaseId },
+        properties: {
+          title: {
+            title: [{ text: { content: title || "Untitled" } }],
+          },
+        },
+        children: content ? [
+          {
+            object: "block",
+            type: "paragraph",
+            paragraph: {
+              rich_text: [{ type: "text", text: { content } }],
+            },
+          },
+        ] : [],
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`   ❌ Notion API error:`, result);
+      throw new Error(result.message || "Notion API error");
+    }
+
+    console.log(`   ✅ Page created: ${result.id}`);
+    return true;
+  } catch (error) {
+    console.error(`   ❌ Failed to create Notion page:`, error);
+    throw error;
+  }
 }
 
 /**
- * Create Trello Card - Demo mode
+ * Create Trello Card - Uses Trello API
  */
 async function createTrelloCard(metadata: ActionMetadata): Promise<boolean> {
   const { listId, title, description } = metadata as {
@@ -212,9 +302,44 @@ async function createTrelloCard(metadata: ActionMetadata): Promise<boolean> {
   console.log(`📋 [Create Trello Card]`);
   console.log(`   List: ${listId}`);
   console.log(`   Title: ${title}`);
-  console.log(`   ⚠️ Trello API not configured - demo mode`);
 
-  return true;
+  const apiKey = process.env.TRELLO_API_KEY;
+  const apiToken = process.env.TRELLO_API_TOKEN;
+
+  if (!apiKey || !apiToken) {
+    console.log(`   ⚠️ TRELLO_API_KEY or TRELLO_API_TOKEN not set - skipping`);
+    return true;
+  }
+
+  if (!listId) {
+    console.log(`   ⚠️ No list ID provided - skipping`);
+    return true;
+  }
+
+  try {
+    const url = new URL("https://api.trello.com/1/cards");
+    url.searchParams.set("key", apiKey);
+    url.searchParams.set("token", apiToken);
+    url.searchParams.set("idList", listId);
+    url.searchParams.set("name", title || "Untitled");
+    if (description) {
+      url.searchParams.set("desc", description);
+    }
+
+    const response = await fetch(url.toString(), { method: "POST" });
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`   ❌ Trello API error:`, result);
+      throw new Error(result.message || "Trello API error");
+    }
+
+    console.log(`   ✅ Card created: ${result.id}`);
+    return true;
+  } catch (error) {
+    console.error(`   ❌ Failed to create Trello card:`, error);
+    throw error;
+  }
 }
 
 /**

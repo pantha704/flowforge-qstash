@@ -58,6 +58,44 @@ class ApiClient {
     });
   }
 
+  // Social login
+  async getGoogleLoginUrl(): Promise<{ success: boolean; authUrl: string }> {
+    return this.request("/auth/google");
+  }
+
+  async loginWithGoogle(code: string): Promise<AuthResponse> {
+    return this.request<AuthResponse>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  async getGitHubLoginUrl(): Promise<{ success: boolean; authUrl: string }> {
+    return this.request("/auth/github");
+  }
+
+  async loginWithGitHub(code: string): Promise<AuthResponse> {
+    return this.request<AuthResponse>("/auth/github", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  // Password reset
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    return this.request("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string): Promise<{ success: boolean; message: string }> {
+    return this.request("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
   // Trigger endpoints
   async getAvailableTriggers(): Promise<AvailableTriggersResponse> {
     return this.request<AvailableTriggersResponse>("/trigger/available");

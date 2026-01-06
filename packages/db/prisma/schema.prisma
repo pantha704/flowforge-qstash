@@ -8,14 +8,19 @@ datasource db {
 }
 
 model User {
-  id          Int              @id @default(autoincrement())
-  email       String           @unique
-  password    String
+  id          Int                  @id @default(autoincrement())
+  email       String               @unique
+  password    String? // Optional for social login users
   name        String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  provider    String? // "email", "google", "github"
+  providerId  String? // External provider's user ID
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   zaps        Zap[]
   connections UserConnection[]
+  resetTokens PasswordResetToken[]
+
+  @@unique([provider, providerId])
 }
 
 // Store OAuth tokens for external services (Google, etc.)
@@ -33,6 +38,17 @@ model UserConnection {
   updatedAt    DateTime  @updatedAt
 
   @@unique([userId, provider])
+}
+
+// Password reset tokens
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Zap {
