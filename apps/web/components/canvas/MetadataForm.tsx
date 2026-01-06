@@ -283,7 +283,8 @@ const actionFields: Record<string, Array<{ key: string; label: string; type: "te
     { key: "body", label: "Body", type: "textarea", placeholder: "Email body content..." },
   ],
   "Send Slack Message": [
-    { key: "channel", label: "Channel", type: "text", placeholder: "#general" },
+    { key: "webhookUrl", label: "Slack Webhook URL", type: "url", placeholder: "https://hooks.slack.com/services/..." },
+    { key: "channel", label: "Channel (optional)", type: "text", placeholder: "#general" },
     { key: "message", label: "Message", type: "textarea", placeholder: "Your message here..." },
   ],
   "Create Spreadsheet Row": [

@@ -1,6 +1,12 @@
 import { prismaClient } from "@repo/db";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { Client } from "@upstash/qstash";
+
+// Initialize QStash client
+const qstash = new Client({
+  token: process.env.QSTASH_TOKEN || "",
+});
 
 // Middleware helper to verify auth
 function getUserIdFromToken(req: NextRequest): number | null {
@@ -59,13 +65,25 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    // First verify the zap belongs to this user
+    // First verify the zap belongs to this user and get trigger info
     const zap = await prismaClient.zap.findFirst({
       where: { id, userId },
+      include: { trigger: true },
     });
 
     if (!zap) {
       return NextResponse.json({ error: "Zap not found" }, { status: 404 });
+    }
+
+    // Cancel QStash schedule if exists
+    const scheduleId = (zap.trigger?.payload as { scheduleId?: string })?.scheduleId;
+    if (scheduleId) {
+      try {
+        await qstash.schedules.delete(scheduleId);
+        console.log(`🛑 Cancelled schedule ${scheduleId} for zap ${id}`);
+      } catch (e) {
+        console.error(`Failed to cancel schedule ${scheduleId}:`, e);
+      }
     }
 
     // Delete related records first (cascade manually)

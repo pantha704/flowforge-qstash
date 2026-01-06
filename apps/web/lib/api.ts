@@ -115,6 +115,27 @@ class ApiClient {
   }> {
     return this.request(`/runs?userId=${userId}&limit=${limit}`);
   }
+
+  // OAuth Connections
+  async getConnections(): Promise<{
+    success: boolean;
+    connections: Array<{
+      id: string;
+      provider: string;
+      email: string | null;
+      createdAt: string;
+    }>;
+  }> {
+    return this.request("/connections");
+  }
+
+  async getGoogleAuthUrl(): Promise<{ success: boolean; authUrl: string }> {
+    return this.request("/oauth/google");
+  }
+
+  async disconnectProvider(provider: string): Promise<{ success: boolean }> {
+    return this.request(`/connections?provider=${provider}`, { method: "DELETE" });
+  }
 }
 
 export const api = new ApiClient();

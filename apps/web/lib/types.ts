@@ -47,6 +47,8 @@ export interface Zap {
   user?: Pick<User, "id" | "email" | "name">;
   createdAt?: string;
   updatedAt?: string;
+  maxRuns?: number; // -1 = forever, 1+ = limit
+  _count?: { ZapRuns: number };
 }
 
 export interface ZapRun {

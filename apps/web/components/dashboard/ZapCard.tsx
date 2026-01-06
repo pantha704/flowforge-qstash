@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   ArrowRight, Trash2, Zap as ZapIcon, Copy, Check, Clock, Webhook, Calendar,
-  Mail, FileSpreadsheet, FolderOpen, FileText, MessageSquare, Send, Globe, Trello, Phone
+  Mail, FileSpreadsheet, FolderOpen, FileText, MessageSquare, Globe, Trello, Phone, Play, Infinity
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Zap } from "@/lib/types";
@@ -159,25 +159,46 @@ export function ZapCard({ zap, onDelete }: ZapCardProps) {
         </div>
       </div>
 
-      {/* Action Badges */}
-      {actions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {actions.map((action, index) => {
-            const actionName = action.type?.name || "Unknown";
-            const actionStyle = ACTION_STYLES[actionName] || DEFAULT_STYLE;
-            const ActionIcon = actionStyle.icon;
-            return (
-              <div
-                key={index}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${actionStyle.bg} ${actionStyle.text}`}
-              >
-                <ActionIcon className="w-3 h-3" />
-                <span className="truncate max-w-24">{actionName}</span>
-              </div>
-            );
-          })}
+      {/* Action Badges + Run Stats Row */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap gap-1.5">
+          {actions.length > 0 ? (
+            actions.map((action, index) => {
+              const actionName = action.type?.name || "Unknown";
+              const actionStyle = ACTION_STYLES[actionName] || DEFAULT_STYLE;
+              const ActionIcon = actionStyle.icon;
+              return (
+                <div
+                  key={index}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${actionStyle.bg} ${actionStyle.text}`}
+                >
+                  <ActionIcon className="w-3 h-3" />
+                  <span className="truncate max-w-24">{actionName}</span>
+                </div>
+              );
+            })
+          ) : (
+            <span className="text-xs text-muted-foreground">No actions</span>
+          )}
         </div>
-      )}
+
+        {/* Run Statistics - Right aligned */}
+        <div
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/50 text-xs text-muted-foreground"
+          title={
+            zap.maxRuns === -1 || zap.maxRuns === undefined
+              ? "Unlimited runs"
+              : `${zap._count?.ZapRuns ?? 0} of ${zap.maxRuns} runs used`
+          }
+        >
+          <span className="font-medium">{zap._count?.ZapRuns ?? 0}</span>|
+          {zap.maxRuns === -1 || zap.maxRuns === undefined ? (
+            <Infinity className="w-3 h-3" />
+          ) : (
+            <span>/ {zap.maxRuns}</span>
+          )}
+        </div>
+      </div>
 
       {/* Webhook URL (for webhook triggers) */}
       {isWebhookTrigger && webhookUrl && (
