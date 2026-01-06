@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0a0a0a"/>
+  <g fill="none" stroke="#06b6d4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Three connected circles - workflow/webhook icon -->
+    <circle cx="20" cy="20" r="6" fill="#06b6d4" fill-opacity="0.2"/>
+    <circle cx="44" cy="20" r="6" fill="#06b6d4" fill-opacity="0.2"/>
+    <circle cx="32" cy="44" r="6" fill="#06b6d4" fill-opacity="0.2"/>
+    <!-- Connecting lines -->
+    <path d="M26 23 L38 23"/>
+    <path d="M23 26 L29 38"/>
+    <path d="M41 26 L35 38"/>
+  </g>
+</svg>
