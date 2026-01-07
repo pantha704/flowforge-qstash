@@ -122,9 +122,10 @@ export async function PATCH(
   const body = await req.json();
 
   try {
-    // Verify the zap belongs to this user
+    // Verify the zap belongs to this user and get trigger info
     const existingZap = await prismaClient.zap.findFirst({
       where: { id, userId },
+      include: { trigger: { include: { type: true } } },
     });
 
     if (!existingZap) {
@@ -135,6 +136,54 @@ export async function PATCH(
     const updateData: { isActive?: boolean } = {};
     if (typeof body.isActive === "boolean") {
       updateData.isActive = body.isActive;
+    }
+
+    // Handle Schedule (Cron) triggers - pause/resume QStash schedule
+    const isScheduleTrigger = existingZap.trigger?.type?.name === "Schedule (Cron)";
+    const triggerPayload = existingZap.trigger?.payload as {
+      scheduleId?: string;
+      cronExpression?: string;
+      timezone?: string
+    } | null;
+
+    if (isScheduleTrigger && typeof body.isActive === "boolean") {
+      if (!body.isActive && triggerPayload?.scheduleId) {
+        // PAUSING: Delete the QStash schedule
+        try {
+          await qstash.schedules.delete(triggerPayload.scheduleId);
+          console.log(`⏸️ Paused schedule ${triggerPayload.scheduleId} for zap ${id}`);
+        } catch (e) {
+          console.error(`Failed to pause schedule ${triggerPayload.scheduleId}:`, e);
+        }
+      } else if (body.isActive && triggerPayload?.cronExpression) {
+        // RESUMING: Re-create the QStash schedule
+        try {
+          const webhookUrl = `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001'}/api/cron/${id}`;
+
+          const schedule = await qstash.schedules.create({
+            destination: webhookUrl,
+            cron: triggerPayload.cronExpression,
+            body: JSON.stringify({ zapId: id, userId: existingZap.userId }),
+          });
+
+          console.log(`▶️ Resumed schedule ${schedule.scheduleId} for zap ${id}`);
+
+          // Update the trigger with new scheduleId
+          if (existingZap.trigger) {
+            await prismaClient.trigger.update({
+              where: { id: existingZap.trigger.id },
+              data: {
+                payload: {
+                  ...triggerPayload,
+                  scheduleId: schedule.scheduleId,
+                },
+              },
+            });
+          }
+        } catch (e) {
+          console.error(`Failed to resume schedule for zap ${id}:`, e);
+        }
+      }
     }
 
     const zap = await prismaClient.zap.update({
