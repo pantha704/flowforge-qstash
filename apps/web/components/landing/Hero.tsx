@@ -9,10 +9,12 @@ import { ArrowRight, Zap, CheckCircle2, Mail, Database, GitBranch, Bell, Webhook
 import { SparklesCore } from "@/components/ui/sparkles";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { useAuthStore } from "@/lib/store";
+import { useTheme } from "next-themes";
 
 export default function Hero() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -119,14 +121,14 @@ export default function Hero() {
 
           <h1
             ref={titleRef}
-            className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 px-2"
+            className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 px-4 w-full break-words"
           >
             Automate at the speed of thought.
           </h1>
 
           <p
             ref={subtitleRef}
-            className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground/80 max-w-2xl mx-auto leading-relaxed px-2"
+            className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground/80 w-full max-w-2xl mx-auto leading-relaxed px-4 break-words"
           >
             Connect your favorite apps and let workflows run themselves. No coding required. Just pure productivity.
           </p>
@@ -151,8 +153,8 @@ export default function Hero() {
           </div>
 
           {/* Sparkles Effect */}
-          <div className="flex justify-center w-full mt-12">
-            <div className="w-[100rem] max-w-full h-72 relative">
+          <div className="flex justify-center w-full mt-12 px-4">
+            <div className="w-full h-72 relative">
               {/* Gradients */}
               <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-cyan-500 to-transparent h-[2px] w-[85%] blur-sm" />
               <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-cyan-500 to-transparent h-px w-[85%]" />
@@ -166,7 +168,7 @@ export default function Hero() {
                 maxSize={1}
                 particleDensity={1200}
                 className="w-full h-full"
-                particleColor="#FFFFFF"
+                particleColor={resolvedTheme === 'dark' ? '#FFFFFF' : '#0ea5e9'}
               />
 
               {/* Radial Gradient to prevent sharp edges */}
@@ -181,42 +183,42 @@ export default function Hero() {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-10 opacity-40 max-w-[1400px]"
         >
           {/* Row 1: Settings - Left (curved in from edge) */}
-          <div className="absolute top-[15%] left-[10%] p-3 mt-2 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
+          <div className="absolute top-[15%] left-[10%] p-3 mt-2 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
              <Settings className="w-6 h-6 text-rose-400" />
           </div>
 
           {/* Row 2: CheckCircle - Right (curved in from edge) */}
-          <div className="absolute top-[20%] right-[7%] p-4 mt-2 bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-float-slow hidden lg:block">
+          <div className="absolute top-[20%] right-[7%] p-4 mt-2 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-2xl shadow-2xl animate-float-slow hidden lg:block">
              <CheckCircle2 className="w-8 h-8 text-green-400" />
           </div>
 
           {/* Row 3: Zap - Left (widest point) */}
-          <div className="absolute top-[35%] left-[3%] p-4 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-float-fast hidden lg:block">
+          <div className="absolute top-[35%] left-[3%] p-4 mb-2 ml-1 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-2xl shadow-2xl animate-float-fast hidden lg:block">
              <Zap className="w-8 h-8 text-cyan-400" />
           </div>
 
           {/* Row 4: Database - Right (widest point) */}
-          <div className="absolute top-[40%] right-[3%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
+          <div className="absolute top-[40%] right-[3%] p-3 mb-2 ml-1 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
              <Database className="w-6 h-6 text-purple-400" />
           </div>
 
           {/* Row 5: Mail - Left (middle) */}
-          <div className="absolute top-[55%] left-[4%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-slow hidden lg:block">
+          <div className="absolute top-[55%] left-[4%] p-3 mb-2 ml-1 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-xl shadow-2xl animate-float-slow hidden lg:block">
              <Mail className="w-6 h-6 text-blue-400" />
           </div>
 
           {/* Row 6: Bell - Right (middle) */}
-          <div className="absolute top-[58%] right-[4%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-fast hidden lg:block">
+          <div className="absolute top-[58%] right-[4%] p-3 mb-2 ml-1 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-xl shadow-2xl animate-float-fast hidden lg:block">
              <Bell className="w-6 h-6 text-yellow-400" />
           </div>
 
           {/* Row 7: GitBranch - Left (curving back in) */}
-          <div className="absolute top-[72%] left-[8%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
+          <div className="absolute top-[72%] left-[8%] p-3 mb-2 ml-1 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-xl shadow-2xl animate-float-medium hidden lg:block">
              <GitBranch className="w-6 h-6 text-orange-400" />
           </div>
 
           {/* Row 8: Webhook - Right (curving back in) */}
-          <div className="absolute top-[75%] right-[8%] p-3 mb-2 ml-1 bg-background/30 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl animate-float-slow hidden lg:block">
+          <div className="absolute top-[75%] right-[8%] p-3 mb-2 ml-1 bg-slate-200/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-xl shadow-2xl animate-float-slow hidden lg:block">
              <Webhook className="w-5 h-5 text-teal-400" />
           </div>
         </div>
