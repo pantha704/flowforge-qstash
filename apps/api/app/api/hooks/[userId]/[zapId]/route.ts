@@ -49,6 +49,15 @@ export async function POST(
       );
     }
 
+    // Check if zap is disabled
+    if (!zap.isActive) {
+      console.log(`[Hook] Zap ${zapId} is disabled, skipping execution`);
+      return NextResponse.json(
+        { success: false, error: "Zap is disabled" },
+        { status: 403 }
+      );
+    }
+
     // Check run limit
     const runCount = zap._count.ZapRuns;
     if (zap.maxRuns > 0 && runCount >= zap.maxRuns) {

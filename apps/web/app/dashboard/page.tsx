@@ -79,6 +79,19 @@ export default function DashboardPage() {
     }
   };
 
+  const handleToggle = async (zapId: string, isActive: boolean) => {
+    try {
+      await api.toggleZap(zapId, isActive);
+      setZaps((prev) =>
+        prev.map((z) => (z.id === zapId ? { ...z, isActive } : z))
+      );
+      toast.success(isActive ? "Zap enabled" : "Zap paused");
+    } catch (error) {
+      toast.error("Failed to update zap");
+      throw error; // Re-throw to let ZapCard revert UI
+    }
+  };
+
   return (
     <div ref={containerRef} className="min-h-[calc(100vh-64px)] p-4 md:p-8">
       <div className="container mx-auto max-w-screen-xl">
@@ -143,7 +156,7 @@ export default function DashboardPage() {
         {!isLoading && zaps.length > 0 && (
           <div ref={cardsRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {zaps.map((zap) => (
-              <ZapCard key={zap.id} zap={zap} onDelete={handleDelete} />
+              <ZapCard key={zap.id} zap={zap} onDelete={handleDelete} onToggle={handleToggle} />
             ))}
           </div>
         )}

@@ -57,6 +57,7 @@ model Zap {
   trigger   Trigger?
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+  isActive  Boolean  @default(true)
   maxRuns   Int      @default(-1) // -1 = forever, 1+ = limit
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

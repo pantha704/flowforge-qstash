@@ -107,3 +107,49 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+// PATCH /api/zap/[id] - Update zap (toggle isActive)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = getUserIdFromToken(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const body = await req.json();
+
+  try {
+    // Verify the zap belongs to this user
+    const existingZap = await prismaClient.zap.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existingZap) {
+      return NextResponse.json({ error: "Zap not found" }, { status: 404 });
+    }
+
+    // Update only allowed fields
+    const updateData: { isActive?: boolean } = {};
+    if (typeof body.isActive === "boolean") {
+      updateData.isActive = body.isActive;
+    }
+
+    const zap = await prismaClient.zap.update({
+      where: { id },
+      data: updateData,
+      include: {
+        trigger: { include: { type: true } },
+        actions: { include: { type: true }, orderBy: { sortingOrder: "asc" } },
+      },
+    });
+
+    console.log(`🔄 Zap ${id} toggled: isActive=${zap.isActive}`);
+    return NextResponse.json({ success: true, zap });
+  } catch (error) {
+    console.error("Update zap error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

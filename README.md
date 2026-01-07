@@ -1,6 +1,6 @@
 # FlowForge (QStash Serverless Version)
 
-> A serverless Zapier clone using Upstash QStash instead of Kafka - optimized for free-tier cloud deployment.
+> A serverless Zapier clone using Upstash's QStash instead of Kafka - optimized for free-tier cloud deployment.
 
 ## 🔗 Live Demo
 

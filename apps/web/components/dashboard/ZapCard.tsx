@@ -5,6 +5,7 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import {
   ArrowRight, Trash2, Zap as ZapIcon, Copy, Check, Clock, Webhook, Calendar,
   Mail, FileSpreadsheet, FolderOpen, FileText, MessageSquare, Globe, Trello, Phone, Play, Infinity
@@ -15,6 +16,7 @@ import type { Zap } from "@/lib/types";
 interface ZapCardProps {
   zap: Zap;
   onDelete: (id: string) => void;
+  onToggle?: (id: string, isActive: boolean) => Promise<void>;
 }
 
 // Color and icon mapping for triggers
@@ -42,9 +44,11 @@ const ACTION_STYLES: Record<string, { bg: string; text: string; icon: React.Elem
 // Default style for unknown types
 const DEFAULT_STYLE = { bg: "bg-primary/20", text: "text-primary", icon: ZapIcon };
 
-export function ZapCard({ zap, onDelete }: ZapCardProps) {
+export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [isActive, setIsActive] = useState(zap.isActive ?? true);
+  const [isToggling, setIsToggling] = useState(false);
 
   const handleMouseEnter = () => {
     if (cardRef.current) {
@@ -94,6 +98,17 @@ export function ZapCard({ zap, onDelete }: ZapCardProps) {
     }
   };
 
+  const handleToggle = async (checked: boolean) => {
+    if (!onToggle || isToggling) return;
+    setIsToggling(true);
+    try {
+      await onToggle(zap.id, checked);
+      setIsActive(checked);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   // Format date
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
@@ -107,16 +122,29 @@ export function ZapCard({ zap, onDelete }: ZapCardProps) {
   return (
     <Card
       ref={cardRef}
-      className="zap-card p-6 bg-card/80 backdrop-blur-sm border-border/50 transition-shadow hover:shadow-lg hover:shadow-primary/5"
+      className={`zap-card p-6 bg-card/80 backdrop-blur-sm border-border/50 transition-all hover:shadow-lg hover:shadow-primary/5 ${!isActive ? 'opacity-60' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Trigger Type Badge */}
-      <div className="flex items-center gap-2 mb-3">
+      {/* Header: Trigger Badge + Toggle */}
+      <div className="flex items-center justify-between mb-3">
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${triggerStyle.bg} ${triggerStyle.text}`}>
           <TriggerIcon className="w-3 h-3" />
           {triggerName}
         </div>
+        {onToggle && (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs ${isActive ? 'text-green-500' : 'text-muted-foreground'}`}>
+              {isActive ? 'Active' : 'Paused'}
+            </span>
+            <Switch
+              checked={isActive}
+              onCheckedChange={handleToggle}
+              disabled={isToggling}
+              className="data-[state=checked]:bg-green-500"
+            />
+          </div>
+        )}
       </div>
 
       {/* Trigger and Action Flow */}

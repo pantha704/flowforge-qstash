@@ -136,6 +136,13 @@ class ApiClient {
     });
   }
 
+  async toggleZap(id: string, isActive: boolean): Promise<{ success: boolean; zap: { id: string; isActive: boolean } }> {
+    return this.request(`/zap/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isActive }),
+    });
+  }
+
   // Run history
   async getRuns(userId: number, limit = 50): Promise<{
     success: boolean;
