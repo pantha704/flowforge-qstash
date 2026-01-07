@@ -200,24 +200,26 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
         )}
       </div>
 
-      {/* Title and Description */}
-      {(zap.name || zap.description) && (
-        <div className="mb-3 space-y-1">
-          {zap.name && (
-            <h3 className="text-sm font-medium truncate" title={zap.name}>
-              {zap.name}
-            </h3>
-          )}
-          {zap.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2" title={zap.description}>
-              {zap.description}
-            </p>
-          )}
-        </div>
-      )}
+      {/* Main Content - centers when no title/description */}
+      <div className={`flex-1 flex flex-col ${!(zap.name || zap.description) ? 'justify-center' : ''}`}>
+        {/* Title and Description */}
+        {(zap.name || zap.description) && (
+          <div className="mb-3 space-y-1">
+            {zap.name && (
+              <h3 className="text-sm font-medium truncate" title={zap.name}>
+                {zap.name}
+              </h3>
+            )}
+            {zap.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2" title={zap.description}>
+                {zap.description}
+              </p>
+            )}
+          </div>
+        )}
 
-      {/* Trigger and Action Flow */}
-      <div className="flex items-center gap-3 mb-4">
+        {/* Trigger and Action Flow */}
+        <div className="flex items-center gap-3 mb-4">
         {/* Trigger Icon */}
         <div className={`group flex h-10 w-10 items-center justify-center rounded-lg ${triggerStyle.bg} ${triggerStyle.text}`}>
           <TriggerIcon className={`h-5 w-5 ${ICON_ANIMATIONS[triggerName] || 'animate-icon-zap'}`} />
@@ -343,6 +345,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
           )}
         </div>
       )}
+      </div>
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-border/50 mt-auto">
