@@ -89,10 +89,10 @@ export default function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background py-20"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-x-hidden bg-background py-20"
     >
       {/* Background Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10 mix-blend-screen dark:mix-blend-lighten opacity-50" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10 mix-blend-screen dark:mix-blend-lighten opacity-50" />
 
       <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
         <div className="space-y-10 max-w-4xl mx-auto z-20">
@@ -119,9 +119,9 @@ export default function Hero() {
 
           <h1
             ref={titleRef}
-            className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2"
+            className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 break-words"
           >
-            Automate at the <br className="hidden md:block" />
+            Automate at the <br className="hidden sm:block" />
             speed of thought.
           </h1>
 
