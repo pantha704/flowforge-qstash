@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -12,8 +12,7 @@ import { ButtonPair } from "@/components/canvas/ButtonPair";
 import { api } from "@/lib/api";
 import { useZapBuilderStore, useAuthStore } from "@/lib/store";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Loader2, Repeat } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, ArrowUp, Save, Loader2, Repeat } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -39,6 +38,7 @@ export default function CreateZapPage() {
   const [customRuns, setCustomRuns] = useState<string>("");
   const [zapName, setZapName] = useState<string>("");
   const [zapDescription, setZapDescription] = useState<string>("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -47,6 +47,19 @@ export default function CreateZapPage() {
     // Reset store when component unmounts
     return () => reset();
   }, [isAuthenticated, router, reset]);
+
+  // Scroll listener for scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useGSAP(
     () => {
@@ -231,10 +244,57 @@ export default function CreateZapPage() {
           </div>
         </div>
 
-        {/* Canvas - Centered (unchanged from original) */}
+        {/* Canvas - Centered */}
         <div ref={canvasRef} className="flex flex-col items-center">
-          {/* Trigger Node */}
+          {/* Step 1: Name & Description */}
+          <Card className="w-full max-w-lg p-5 bg-card/80 backdrop-blur-sm border-border/50 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                1
+              </div>
+              <h3 className="font-medium">Name Your Zap</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="zapName" className="text-sm font-medium">
+                  Zap Name
+                </Label>
+                <Input
+                  id="zapName"
+                  placeholder="e.g., Send Slack alerts for new emails"
+                  value={zapName}
+                  onChange={(e) => setZapName(e.target.value)}
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zapDescription" className="text-sm text-muted-foreground">
+                  Description (optional)
+                </Label>
+                <Textarea
+                  id="zapDescription"
+                  placeholder="Briefly describe what this automation does..."
+                  value={zapDescription}
+                  onChange={(e) => setZapDescription(e.target.value)}
+                  className="min-h-16 resize-none"
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* Connector Line to Trigger */}
+          <div className="flex justify-center">
+            <ConnectorLine />
+          </div>
+
+          {/* Step 2: Trigger Node */}
           <div className="w-full max-w-lg">
+            <div className="flex items-center gap-2 mb-2 pl-1">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                2
+              </div>
+              <h3 className="font-medium text-sm text-muted-foreground">Choose a Trigger</h3>
+            </div>
             <TriggerNode />
           </div>
 
@@ -245,7 +305,16 @@ export default function CreateZapPage() {
             </div>
           )}
 
-          {/* Action Nodes */}
+          {/* Step 3: Action Nodes */}
+          {selectedTrigger && actions.length > 0 && (
+            <div className="flex items-center gap-2 mb-2 pl-1 w-full max-w-lg">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                3
+              </div>
+              <h3 className="font-medium text-sm text-muted-foreground">Add Actions</h3>
+            </div>
+          )}
+
           {actions.map((action, index) => (
             <div key={action.id} className="w-full max-w-lg">
               <ActionNode action={action} index={index} />
@@ -267,7 +336,7 @@ export default function CreateZapPage() {
           {/* Helper Text */}
           {!selectedTrigger && (
             <p className="text-center text-muted-foreground mt-8 max-w-md">
-              Start by selecting a trigger. This will determine when your
+              Select a trigger above. This will determine when your
               automation runs.
             </p>
           )}
@@ -280,40 +349,18 @@ export default function CreateZapPage() {
           )}
         </div>
 
-        {/* Right Side Panel - Name & Description (absolutely positioned) */}
-        <div className="hidden xl:block fixed right-8 top-1/2 -translate-y-1/2 w-64 z-10">
-          <Card className="p-4 bg-card/80 backdrop-blur-sm border-border/50 shadow-lg">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="zapName" className="text-sm font-medium">
-                  Zap Name
-                </Label>
-                <Input
-                  id="zapName"
-                  placeholder="My Automation"
-                  value={zapName}
-                  onChange={(e) => setZapName(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="zapDescription" className="text-sm font-medium">
-                  Description
-                </Label>
-                <Textarea
-                  id="zapDescription"
-                  placeholder="What does this zap do?"
-                  value={zapDescription}
-                  onChange={(e) => setZapDescription(e.target.value)}
-                  className="min-h-20 resize-none"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Give your zap a name and description to remember what it does.
-              </p>
-            </div>
-          </Card>
-        </div>
+        {/* Scroll to Top Button */}
+        {showScrollTop && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={scrollToTop}
+            className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-all"
+            title="Scroll to top"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </Button>
+        )}
       </div>
     </div>
   );

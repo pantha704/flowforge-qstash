@@ -12,7 +12,7 @@ import { ButtonPair } from "@/components/canvas/ButtonPair";
 import { api } from "@/lib/api";
 import { useZapBuilderStore, useAuthStore } from "@/lib/store";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Loader2, Repeat } from "lucide-react";
+import { ArrowLeft, ArrowUp, Save, Loader2, Repeat } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import type { Zap, AvailableTrigger, ZapBuilderAction } from "@/lib/types";
 
 export default function EditZapPage() {
@@ -39,6 +42,9 @@ export default function EditZapPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [maxRuns, setMaxRuns] = useState<number>(-1);
   const [customRuns, setCustomRuns] = useState<string>("");
+  const [zapName, setZapName] = useState<string>("");
+  const [zapDescription, setZapDescription] = useState<string>("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Fetch existing zap data and hydrate store
   useEffect(() => {
@@ -87,6 +93,10 @@ export default function EditZapPage() {
             setMaxRuns(0);
             setCustomRuns(zap.maxRuns.toString());
           }
+
+          // Set name/description
+          setZapName(zap.name || "");
+          setZapDescription(zap.description || "");
         } catch {
           toast.error("Failed to load zap");
           router.push("/dashboard");
@@ -101,6 +111,20 @@ export default function EditZapPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, zapId]);
+
+  // Scroll listener for scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
 
   useGSAP(
     () => {
@@ -146,6 +170,8 @@ export default function EditZapPage() {
           actionMetadata: a.actionMetadata,
         })),
         maxRuns: maxRuns === 0 ? parseInt(customRuns) || -1 : maxRuns,
+        name: zapName || undefined,
+        description: zapDescription || undefined,
       });
 
       toast.success("Zap updated successfully!");
@@ -245,8 +271,55 @@ export default function EditZapPage() {
 
         {/* Canvas */}
         <div ref={canvasRef} className="flex flex-col items-center">
-          {/* Trigger Node - Read-only for editing (trigger type can't change) */}
+          {/* Step 1: Name & Description */}
+          <Card className="w-full max-w-lg p-5 bg-card/80 backdrop-blur-sm border-border/50 mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                1
+              </div>
+              <h3 className="font-medium">Zap Details</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="zapName" className="text-sm font-medium">
+                  Zap Name
+                </Label>
+                <Input
+                  id="zapName"
+                  placeholder="e.g., Send Slack alerts for new emails"
+                  value={zapName}
+                  onChange={(e) => setZapName(e.target.value)}
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zapDescription" className="text-sm text-muted-foreground">
+                  Description (optional)
+                </Label>
+                <Textarea
+                  id="zapDescription"
+                  placeholder="Briefly describe what this automation does..."
+                  value={zapDescription}
+                  onChange={(e) => setZapDescription(e.target.value)}
+                  className="min-h-16 resize-none"
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* Connector Line */}
+          <div className="flex justify-center">
+            <ConnectorLine />
+          </div>
+
+          {/* Step 2: Trigger Node */}
           <div className="w-full max-w-lg">
+            <div className="flex items-center gap-2 mb-2 pl-1">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                2
+              </div>
+              <h3 className="font-medium text-sm text-muted-foreground">Trigger</h3>
+            </div>
             <TriggerNode />
           </div>
 
@@ -257,7 +330,16 @@ export default function EditZapPage() {
             </div>
           )}
 
-          {/* Action Nodes */}
+          {/* Step 3: Action Nodes */}
+          {selectedTrigger && actions.length > 0 && (
+            <div className="flex items-center gap-2 mb-2 pl-1 w-full max-w-lg">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                3
+              </div>
+              <h3 className="font-medium text-sm text-muted-foreground">Actions</h3>
+            </div>
+          )}
+
           {actions.map((action, index) => (
             <div key={action.id} className="w-full max-w-lg">
               <ActionNode action={action} index={index} />
@@ -276,6 +358,19 @@ export default function EditZapPage() {
             </div>
           )}
         </div>
+
+        {/* Scroll to Top Button */}
+        {showScrollTop && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={scrollToTop}
+            className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg bg-card/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-all"
+            title="Scroll to top"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </Button>
+        )}
       </div>
     </div>
   );

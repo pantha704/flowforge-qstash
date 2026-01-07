@@ -153,6 +153,8 @@ class ApiClient {
       actionMetadata: Record<string, unknown>;
     }>;
     maxRuns?: number;
+    name?: string;
+    description?: string;
   }): Promise<{ success: boolean; zap: { id: string } }> {
     return this.request(`/zap/${id}`, {
       method: "PUT",

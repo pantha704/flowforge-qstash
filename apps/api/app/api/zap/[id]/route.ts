@@ -325,6 +325,21 @@ export async function PUT(
       });
     }
 
+    // Update name/description if provided
+    const zapUpdateData: { name?: string; description?: string } = {};
+    if (typeof body.name === "string") {
+      zapUpdateData.name = body.name || null;
+    }
+    if (typeof body.description === "string") {
+      zapUpdateData.description = body.description || null;
+    }
+    if (Object.keys(zapUpdateData).length > 0) {
+      await prismaClient.zap.update({
+        where: { id },
+        data: zapUpdateData,
+      });
+    }
+
     // Fetch updated zap
     const zap = await prismaClient.zap.findFirst({
       where: { id },
