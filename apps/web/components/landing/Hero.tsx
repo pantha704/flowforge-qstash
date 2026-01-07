@@ -94,8 +94,8 @@ export default function Hero() {
       {/* Background Gradients */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10 mix-blend-screen dark:mix-blend-lighten opacity-50" />
 
-      <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
-        <div className="space-y-10 max-w-4xl mx-auto z-20">
+      <div className="container mx-auto px-6 md:px-8 relative z-10 text-center">
+        <div className="space-y-8 md:space-y-10 max-w-4xl mx-auto z-20">
           {/* "Not backed by Y Combinator" Badge */}
           <div className="flex justify-center mb-12 -mt-4">
             <HoverBorderGradient
@@ -119,15 +119,14 @@ export default function Hero() {
 
           <h1
             ref={titleRef}
-            className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 break-words"
+            className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 px-2"
           >
-            Automate at the <br className="hidden sm:block" />
-            speed of thought.
+            Automate at the speed of thought.
           </h1>
 
           <p
             ref={subtitleRef}
-            className="text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto leading-relaxed"
+            className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground/80 max-w-2xl mx-auto leading-relaxed px-2"
           >
             Connect your favorite apps and let workflows run themselves. No coding required. Just pure productivity.
           </p>
