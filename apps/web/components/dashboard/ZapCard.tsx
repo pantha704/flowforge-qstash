@@ -175,7 +175,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
   return (
     <Card
       ref={cardRef}
-      className={`zap-card p-6 bg-card/80 backdrop-blur-sm border-border/50 transition-all hover:shadow-lg hover:shadow-primary/5 ${!isActive ? 'opacity-60' : ''}`}
+      className={`zap-card flex flex-col h-full p-6 bg-card/80 backdrop-blur-sm border-border/50 transition-all hover:shadow-lg hover:shadow-primary/5 ${!isActive ? 'opacity-60' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -329,7 +329,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/50">
+      <div className="flex items-center justify-between pt-3 border-t border-border/50 mt-auto">
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <ZapIcon className="w-3 h-3" />

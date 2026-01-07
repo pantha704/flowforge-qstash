@@ -154,7 +154,7 @@ export default function DashboardPage() {
 
         {/* Zaps Grid */}
         {!isLoading && zaps.length > 0 && (
-          <div ref={cardsRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div ref={cardsRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
             {zaps.map((zap) => (
               <ZapCard key={zap.id} zap={zap} onDelete={handleDelete} onToggle={handleToggle} />
             ))}
