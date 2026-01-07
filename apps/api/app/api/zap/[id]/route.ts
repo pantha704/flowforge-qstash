@@ -304,6 +304,14 @@ export async function PUT(
 
     // Update actions if provided
     if (body.actions && Array.isArray(body.actions)) {
+      // Get current max sortingOrder
+      const existingActions = await prismaClient.action.findMany({
+        where: { zapId: id },
+        orderBy: { sortingOrder: "desc" },
+        take: 1,
+      });
+      let nextSortingOrder = (existingActions[0]?.sortingOrder ?? 0) + 1;
+
       for (const actionData of body.actions) {
         if (actionData.id) {
           // Update existing action
@@ -311,6 +319,16 @@ export async function PUT(
             where: { id: actionData.id },
             data: {
               metadata: actionData.actionMetadata,
+            },
+          });
+        } else {
+          // Create new action
+          await prismaClient.action.create({
+            data: {
+              zapId: id,
+              actionId: actionData.availableActionId,
+              metadata: actionData.actionMetadata || {},
+              sortingOrder: nextSortingOrder++,
             },
           });
         }
