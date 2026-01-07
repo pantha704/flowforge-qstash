@@ -8,8 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import {
   ArrowRight, Trash2, Zap as ZapIcon, Copy, Check, Clock, Webhook, Calendar,
-  Mail, FileSpreadsheet, FolderOpen, FileText, MessageSquare, Globe, Trello, Phone, Play, Infinity
+  Mail, FileSpreadsheet, FolderOpen, FileText, Globe, Trello, Phone, Infinity
 } from "lucide-react";
+import { SlackIcon, DiscordIcon, NotionIcon } from "@/components/icons";
 import { toast } from "sonner";
 import type { Zap } from "@/lib/types";
 
@@ -50,10 +51,10 @@ const TRIGGER_STYLES: Record<string, { bg: string; text: string; icon: React.Ele
 // Color and icon mapping for actions
 const ACTION_STYLES: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
   "Send Email": { bg: "bg-red-500/20", text: "text-red-500", icon: Mail },
-  "Send Slack Message": { bg: "bg-purple-500/20", text: "text-purple-500", icon: MessageSquare },
+  "Send Slack Message": { bg: "bg-slack/20", text: "text-slack", icon: SlackIcon },
   "Create Spreadsheet Row": { bg: "bg-emerald-500/20", text: "text-emerald-500", icon: FileSpreadsheet },
-  "Send Discord Message": { bg: "bg-indigo-500/20", text: "text-indigo-500", icon: MessageSquare },
-  "Create Notion Page": { bg: "bg-gray-500/20", text: "text-gray-400", icon: FileText },
+  "Send Discord Message": { bg: "bg-discord/20", text: "text-discord", icon: DiscordIcon },
+  "Create Notion Page": { bg: "bg-gray-800/20", text: "text-gray-100", icon: NotionIcon },
   "Send SMS": { bg: "bg-green-500/20", text: "text-green-500", icon: Phone },
   "HTTP Request": { bg: "bg-cyan-500/20", text: "text-cyan-500", icon: Globe },
   "Create Trello Card": { bg: "bg-blue-500/20", text: "text-blue-500", icon: Trello },
