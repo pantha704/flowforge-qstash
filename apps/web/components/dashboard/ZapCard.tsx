@@ -200,6 +200,22 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
         )}
       </div>
 
+      {/* Title and Description */}
+      {(zap.name || zap.description) && (
+        <div className="mb-3 space-y-1">
+          {zap.name && (
+            <h3 className="text-sm font-medium truncate" title={zap.name}>
+              {zap.name}
+            </h3>
+          )}
+          {zap.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2" title={zap.description}>
+              {zap.description}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Trigger and Action Flow */}
       <div className="flex items-center gap-3 mb-4">
         {/* Trigger Icon */}

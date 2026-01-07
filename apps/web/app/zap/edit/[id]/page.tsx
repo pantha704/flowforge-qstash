@@ -45,6 +45,7 @@ export default function EditZapPage() {
   const [zapName, setZapName] = useState<string>("");
   const [zapDescription, setZapDescription] = useState<string>("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [originalActionIds, setOriginalActionIds] = useState<Set<string>>(new Set());
 
   // Fetch existing zap data and hydrate store
   useEffect(() => {
@@ -86,6 +87,9 @@ export default function EditZapPage() {
 
           // Hydrate store
           hydrate(zapId, trigger, triggerMeta, zapActions);
+
+          // Track original action IDs (from database)
+          setOriginalActionIds(new Set(zap.actions.map((a) => a.id)));
 
           // Set max runs
           setMaxRuns(zap.maxRuns || -1);
@@ -165,7 +169,8 @@ export default function EditZapPage() {
       await api.updateZap(zapId, {
         triggerMetadata,
         actions: actions.map((a) => ({
-          id: a.id,
+          // Only include id if this action came from the database
+          id: originalActionIds.has(a.id) ? a.id : undefined,
           availableActionId: a.availableAction.id,
           actionMetadata: a.actionMetadata,
         })),
