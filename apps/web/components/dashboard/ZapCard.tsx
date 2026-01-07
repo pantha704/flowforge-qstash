@@ -104,8 +104,40 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
 
   // Get schedule info from trigger metadata
   const scheduleInfo = isScheduleTrigger && zap.trigger?.payload
-    ? (zap.trigger.payload as { cronExpression?: string; timezone?: string })
+    ? (zap.trigger.payload as { cronExpression?: string; timezone?: string; startTime?: string })
     : null;
+
+  // Parse cron expression for human-readable display
+  const parseCronToHuman = (cron: string): { interval: string; description: string } => {
+    const parts = cron.split(' ');
+    if (parts.length !== 5) return { interval: cron, description: 'Custom schedule' };
+
+    const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+
+    // Check for common patterns
+    if (minute.startsWith('*/')) {
+      const mins = parseInt(minute.slice(2));
+      return { interval: `${mins} min`, description: `Every ${mins} minute${mins > 1 ? 's' : ''}` };
+    }
+    if (hour.startsWith('*/') && minute === '0') {
+      const hrs = parseInt(hour.slice(2));
+      return { interval: `${hrs} hr`, description: `Every ${hrs} hour${hrs > 1 ? 's' : ''}` };
+    }
+    if (dayOfMonth.startsWith('*/') && hour === '0' && minute === '0') {
+      const days = parseInt(dayOfMonth.slice(2));
+      return { interval: `${days} day`, description: `Every ${days} day${days > 1 ? 's' : ''}` };
+    }
+    if (dayOfMonth === '*' && hour !== '*' && minute !== '*' && month === '*' && dayOfWeek === '*') {
+      return { interval: 'Daily', description: `Daily at ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}` };
+    }
+    if (dayOfWeek !== '*' && dayOfMonth === '*') {
+      return { interval: 'Weekly', description: 'Weekly schedule' };
+    }
+
+    return { interval: cron, description: 'Custom schedule' };
+  };
+
+  const cronParsed = scheduleInfo?.cronExpression ? parseCronToHuman(scheduleInfo.cronExpression) : null;
 
   const handleCopyUrl = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -135,6 +167,16 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
       month: "short",
       day: "numeric",
       year: "numeric",
+    });
+  };
+
+  // Format time
+  const formatTime = (dateString?: string) => {
+    if (!dateString) return null;
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -242,7 +284,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
           {zap.maxRuns === -1 || zap.maxRuns === undefined ? (
             <Infinity className="w-3 h-3" />
           ) : (
-            <span>/ {zap.maxRuns}</span>
+            <span>{zap.maxRuns}</span>
           )}
         </div>
       </div>
@@ -267,12 +309,35 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
       )}
 
       {/* Schedule Info (for schedule triggers) */}
-      {isScheduleTrigger && scheduleInfo?.cronExpression && (
-        <div className="mb-3 p-2 bg-muted/50 rounded-lg">
-          <code className="text-xs text-muted-foreground">
-            {scheduleInfo.cronExpression}
-            {scheduleInfo.timezone && ` (${scheduleInfo.timezone})`}
-          </code>
+      {isScheduleTrigger && cronParsed && (
+        <div className="mb-3 p-3 bg-muted/30 rounded-lg border border-border/30">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Repeat Interval */}
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/20 text-purple-500">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">{cronParsed.description}</span>
+                <span className="text-xs text-muted-foreground">
+                  {scheduleInfo?.timezone || 'UTC'}
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Cron Expression */}
+            <code className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded font-mono">
+              {scheduleInfo?.cronExpression}
+            </code>
+          </div>
+
+          {/* Start time info if available */}
+          {scheduleInfo?.startTime && (
+            <div className="mt-2 pt-2 border-t border-border/30 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Calendar className="w-3 h-3" />
+              Started: {formatDate(scheduleInfo.startTime)} at {formatTime(scheduleInfo.startTime)}
+            </div>
+          )}
         </div>
       )}
 
