@@ -96,21 +96,22 @@ export default function DashboardPage() {
     <div ref={containerRef} className="min-h-[calc(100vh-64px)] p-4 md:p-8">
       <div className="container mx-auto max-w-screen-xl">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Your Zaps</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold">Your Zaps</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1 hidden sm:block">
               Manage and monitor your automated workflows
             </p>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <RunHistory />
             <Button
               onClick={() => router.push("/zap/create")}
-              className="flex justify-center items-center gap-2"
+              className="flex-1 sm:flex-initial flex justify-center items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              <span>Create New Zap</span>
+              <span className="hidden sm:inline">Create New Zap</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
         </div>

@@ -175,7 +175,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
   return (
     <Card
       ref={cardRef}
-      className={`zap-card flex flex-col h-full p-6 bg-card/80 backdrop-blur-sm border-border/50 transition-all hover:shadow-lg hover:shadow-primary/5 ${!isActive ? 'opacity-60' : ''}`}
+      className={`zap-card flex flex-col h-full p-4 md:p-6 bg-card/80 backdrop-blur-sm border-border/50 transition-all hover:shadow-lg hover:shadow-primary/5 ${!isActive ? 'opacity-60' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

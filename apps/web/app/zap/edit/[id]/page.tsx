@@ -203,34 +203,34 @@ export default function EditZapPage() {
     <div ref={containerRef} className="min-h-[calc(100vh-64px)] p-4 md:p-8">
       <div className="container mx-auto max-w-2xl">
         {/* Header */}
-        <div ref={headerRef} className="flex items-center justify-between mb-8 gap-4">
-          <div className="flex items-center gap-4">
+        <div ref={headerRef} className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 md:mb-8 gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => router.push("/dashboard")}
-              className="shrink-0"
+              className="shrink-0 h-8 w-8 md:h-10 md:w-10"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Edit Zap</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-xl md:text-2xl font-bold">Edit Zap</h1>
+              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">
                 Modify your automation workflow
               </p>
             </div>
           </div>
 
           {/* Right side controls */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 justify-end">
             {/* Repeat Limit Selector */}
             <div className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Repeat className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
               <Select
                 value={maxRuns.toString()}
                 onValueChange={(val) => setMaxRuns(parseInt(val))}
               >
-                <SelectTrigger className="w-28 h-9">
+                <SelectTrigger className="w-24 md:w-28 h-8 md:h-9 text-xs md:text-sm">
                   <SelectValue placeholder="Runs" />
                 </SelectTrigger>
                 <SelectContent>
@@ -249,7 +249,7 @@ export default function EditZapPage() {
                   placeholder="#"
                   value={customRuns}
                   onChange={(e) => setCustomRuns(e.target.value)}
-                  className="w-16 h-9"
+                  className="w-14 md:w-16 h-8 md:h-9"
                 />
               )}
             </div>
@@ -257,17 +257,17 @@ export default function EditZapPage() {
             <Button
               onClick={handleSave}
               disabled={!canSave || isSaving}
-              className="gap-2 h-9"
+              className="gap-1.5 md:gap-2 h-8 md:h-9 text-xs md:text-sm px-3 md:px-4"
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
+                  <Loader2 className="h-3.5 w-3.5 md:h-4 md:w-4 animate-spin" />
+                  <span className="hidden sm:inline">Saving...</span>
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4" />
-                  Save Changes
+                  <Save className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Save</span>
                 </>
               )}
             </Button>
