@@ -13,6 +13,24 @@ import {
 import { toast } from "sonner";
 import type { Zap } from "@/lib/types";
 
+// Animation class mapping for icons
+const ICON_ANIMATIONS: Record<string, string> = {
+  "Webhook": "animate-icon-rotate",
+  "Schedule (Cron)": "animate-icon-clock",
+  "New Email Received": "animate-icon-mail",
+  "New Form Submission": "animate-icon-file",
+  "New Row in Spreadsheet": "animate-icon-file",
+  "New File in Drive": "animate-icon-folder",
+  "Send Email": "animate-icon-mail",
+  "Send Slack Message": "animate-icon-message",
+  "Send Discord Message": "animate-icon-message",
+  "Create Spreadsheet Row": "animate-icon-file",
+  "Create Notion Page": "animate-icon-file",
+  "Send SMS": "animate-icon-phone",
+  "HTTP Request": "animate-icon-globe",
+  "Create Trello Card": "animate-icon-trello",
+};
+
 interface ZapCardProps {
   zap: Zap;
   onDelete: (id: string) => void;
@@ -150,7 +168,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
       {/* Trigger and Action Flow */}
       <div className="flex items-center gap-3 mb-4">
         {/* Trigger Icon */}
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${triggerStyle.bg} ${triggerStyle.text}`}>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${triggerStyle.bg} ${triggerStyle.text} ${ICON_ANIMATIONS[triggerName] || 'animate-icon-zap'}`}>
           <TriggerIcon className="h-5 w-5" />
         </div>
 
@@ -167,7 +185,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
               return (
                 <div
                   key={index}
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${actionStyle.bg} ${actionStyle.text} border-2 border-background`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${actionStyle.bg} ${actionStyle.text} border-2 border-background ${ICON_ANIMATIONS[actionName] || 'animate-icon-zap'}`}
                   title={actionName}
                 >
                   <ActionIcon className="h-4 w-4" />
@@ -198,7 +216,7 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
               return (
                 <div
                   key={index}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${actionStyle.bg} ${actionStyle.text}`}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${actionStyle.bg} ${actionStyle.text} ${ICON_ANIMATIONS[actionName] || 'animate-icon-zap'}`}
                 >
                   <ActionIcon className="w-3 h-3" />
                   <span className="truncate max-w-24">{actionName}</span>
