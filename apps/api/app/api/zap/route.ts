@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { triggerId, triggerMetadata, actions, maxRuns } = await req.json();
+  const { triggerId, triggerMetadata, actions, maxRuns, name, description } = await req.json();
 
   try {
     // Get the trigger type to check if it's a schedule
@@ -63,6 +63,8 @@ export async function POST(req: NextRequest) {
         data: {
           userId,
           triggerId: "",
+          name: name || null,
+          description: description || null,
           maxRuns: maxRuns ?? -1, // Default to forever
           actions: {
             create: actions.map((a: { availableActionId: string; actionMetadata: object }, i: number) => ({

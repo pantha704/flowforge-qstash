@@ -40,6 +40,8 @@ export interface Action {
 
 export interface Zap {
   id: string;
+  name?: string | null;  // User-friendly name
+  description?: string | null;  // What the zap does
   triggerId: string;
   userId: number;
   trigger: Trigger | null;

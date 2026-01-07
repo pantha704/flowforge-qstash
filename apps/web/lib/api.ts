@@ -123,6 +123,8 @@ class ApiClient {
       actionMetadata: Record<string, unknown>;
     }>;
     maxRuns?: number; // -1 = forever, 1+ = limit
+    name?: string;
+    description?: string;
   }): Promise<{ zap: { id: string } }> {
     return this.request("/zap", {
       method: "POST",

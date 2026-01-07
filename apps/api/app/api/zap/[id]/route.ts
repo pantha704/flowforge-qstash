@@ -158,7 +158,13 @@ export async function PATCH(
       } else if (body.isActive && triggerPayload?.cronExpression) {
         // RESUMING: Re-create the QStash schedule
         try {
-          const webhookUrl = `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001'}/api/cron/${id}`;
+          // Build the correct webhook URL
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL
+            || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+            || 'http://localhost:3001';
+          const webhookUrl = `${baseUrl}/api/cron/${id}`;
+
+          console.log(`▶️ Creating schedule with URL: ${webhookUrl}`);
 
           const schedule = await qstash.schedules.create({
             destination: webhookUrl,
@@ -254,7 +260,12 @@ export async function PUT(
           }
 
           // Create new schedule
-          const webhookUrl = `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001'}/api/cron/${id}`;
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL
+            || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+            || 'http://localhost:3001';
+          const webhookUrl = `${baseUrl}/api/cron/${id}`;
+
+          console.log(`🔄 Updating schedule with URL: ${webhookUrl}`);
 
           const schedule = await qstash.schedules.create({
             destination: webhookUrl,

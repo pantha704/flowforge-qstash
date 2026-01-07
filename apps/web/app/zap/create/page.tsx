@@ -22,6 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 export default function CreateZapPage() {
   const router = useRouter();
@@ -34,6 +37,8 @@ export default function CreateZapPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [maxRuns, setMaxRuns] = useState<number>(-1); // -1 = forever
   const [customRuns, setCustomRuns] = useState<string>("");
+  const [zapName, setZapName] = useState<string>("");
+  const [zapDescription, setZapDescription] = useState<string>("");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -135,6 +140,8 @@ export default function CreateZapPage() {
           actionMetadata: a.actionMetadata,
         })),
         maxRuns: maxRuns === 0 ? parseInt(customRuns) || -1 : maxRuns,
+        name: zapName || undefined,
+        description: zapDescription || undefined,
       });
 
       toast.success("Zap created successfully!");
@@ -224,12 +231,14 @@ export default function CreateZapPage() {
           </div>
         </div>
 
-        {/* Canvas */}
-        <div ref={canvasRef} className="flex flex-col items-center">
-          {/* Trigger Node */}
-          <div className="w-full max-w-lg">
-            <TriggerNode />
-          </div>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+          {/* Canvas - Centered */}
+          <div ref={canvasRef} className="flex flex-col items-center">
+            {/* Trigger Node */}
+            <div className="w-full max-w-lg">
+              <TriggerNode />
+            </div>
 
           {/* Connector Line */}
           {selectedTrigger && (
@@ -271,6 +280,42 @@ export default function CreateZapPage() {
               fires.
             </p>
           )}
+          </div>
+
+          {/* Right Side Panel - Name & Description */}
+          <div className="hidden lg:flex flex-col items-center justify-center">
+            <Card className="w-full p-4 bg-card/80 backdrop-blur-sm border-border/50 sticky top-24">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="zapName" className="text-sm font-medium">
+                    Zap Name
+                  </Label>
+                  <Input
+                    id="zapName"
+                    placeholder="My Automation"
+                    value={zapName}
+                    onChange={(e) => setZapName(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="zapDescription" className="text-sm font-medium">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="zapDescription"
+                    placeholder="What does this zap do?"
+                    value={zapDescription}
+                    onChange={(e) => setZapDescription(e.target.value)}
+                    className="min-h-[80px] resize-none"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Give your zap a name and description to remember what it does.
+                </p>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

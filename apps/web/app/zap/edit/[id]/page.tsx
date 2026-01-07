@@ -30,6 +30,7 @@ export default function EditZapPage() {
 
   const { isAuthenticated } = useAuthStore();
   const { selectedTrigger, triggerMetadata, actions, reset, hydrate, editingZapId } = useZapBuilderStore();
+  const hasHydratedRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,8 @@ export default function EditZapPage() {
     }
 
     // Only fetch if we haven't hydrated for this zap yet
-    if (editingZapId !== zapId) {
+    if (editingZapId !== zapId && !hasHydratedRef.current) {
+      hasHydratedRef.current = true;
       const fetchZap = async () => {
         try {
           const response = await api.getZap(zapId);
@@ -97,9 +99,8 @@ export default function EditZapPage() {
     } else {
       setIsLoading(false);
     }
-
-    return () => reset();
-  }, [isAuthenticated, router, zapId, hydrate, editingZapId, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, zapId]);
 
   useGSAP(
     () => {

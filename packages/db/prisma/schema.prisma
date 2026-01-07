@@ -52,17 +52,19 @@ model PasswordResetToken {
 }
 
 model Zap {
-  id        String   @id @default(uuid())
-  triggerId String
-  trigger   Trigger?
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  isActive  Boolean  @default(true)
-  maxRuns   Int      @default(-1) // -1 = forever, 1+ = limit
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  actions   Action[]
-  ZapRuns   ZapRun[]
+  id          String   @id @default(uuid())
+  name        String? // User-friendly name for the zap
+  description String? // Description of what the zap does
+  triggerId   String
+  trigger     Trigger?
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  isActive    Boolean  @default(true)
+  maxRuns     Int      @default(-1) // -1 = forever, 1+ = limit
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  actions     Action[]
+  ZapRuns     ZapRun[]
 }
 
 model Trigger {
