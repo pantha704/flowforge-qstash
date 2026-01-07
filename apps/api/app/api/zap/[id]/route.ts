@@ -202,3 +202,131 @@ export async function PATCH(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+// PUT /api/zap/[id] - Full update of zap (edit trigger metadata, actions, maxRuns)
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = getUserIdFromToken(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const body = await req.json();
+
+  try {
+    // Verify the zap belongs to this user
+    const existingZap = await prismaClient.zap.findFirst({
+      where: { id, userId },
+      include: {
+        trigger: { include: { type: true } },
+        actions: true
+      },
+    });
+
+    if (!existingZap) {
+      return NextResponse.json({ error: "Zap not found" }, { status: 404 });
+    }
+
+    // Update trigger metadata if provided
+    if (body.triggerMetadata && existingZap.trigger) {
+      const isScheduleTrigger = existingZap.trigger.type?.name === "Schedule (Cron)";
+      const oldPayload = existingZap.trigger.payload as {
+        scheduleId?: string;
+        cronExpression?: string;
+        timezone?: string;
+      } | null;
+      const newPayload = body.triggerMetadata as {
+        cronExpression?: string;
+        timezone?: string;
+      };
+
+      // If cron expression changed, update QStash schedule
+      if (isScheduleTrigger && existingZap.isActive &&
+          (oldPayload?.cronExpression !== newPayload.cronExpression)) {
+        try {
+          // Delete old schedule
+          if (oldPayload?.scheduleId) {
+            await qstash.schedules.delete(oldPayload.scheduleId);
+            console.log(`🔄 Deleted old schedule ${oldPayload.scheduleId}`);
+          }
+
+          // Create new schedule
+          const webhookUrl = `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001'}/api/cron/${id}`;
+
+          const schedule = await qstash.schedules.create({
+            destination: webhookUrl,
+            cron: newPayload.cronExpression!,
+            body: JSON.stringify({ zapId: id, userId }),
+          });
+
+          // Update trigger with new scheduleId
+          await prismaClient.trigger.update({
+            where: { id: existingZap.trigger.id },
+            data: {
+              payload: {
+                ...body.triggerMetadata,
+                scheduleId: schedule.scheduleId,
+              },
+            },
+          });
+
+          console.log(`✅ Created new schedule ${schedule.scheduleId}`);
+        } catch (e) {
+          console.error("Failed to update QStash schedule:", e);
+        }
+      } else {
+        // Just update the payload without touching QStash
+        await prismaClient.trigger.update({
+          where: { id: existingZap.trigger.id },
+          data: {
+            payload: {
+              ...(oldPayload || {}),
+              ...body.triggerMetadata,
+            },
+          },
+        });
+      }
+    }
+
+    // Update actions if provided
+    if (body.actions && Array.isArray(body.actions)) {
+      for (const actionData of body.actions) {
+        if (actionData.id) {
+          // Update existing action
+          await prismaClient.action.update({
+            where: { id: actionData.id },
+            data: {
+              metadata: actionData.actionMetadata,
+            },
+          });
+        }
+      }
+    }
+
+    // Update maxRuns if provided
+    if (typeof body.maxRuns === "number") {
+      await prismaClient.zap.update({
+        where: { id },
+        data: { maxRuns: body.maxRuns },
+      });
+    }
+
+    // Fetch updated zap
+    const zap = await prismaClient.zap.findFirst({
+      where: { id },
+      include: {
+        trigger: { include: { type: true } },
+        actions: { include: { type: true }, orderBy: { sortingOrder: "asc" } },
+      },
+    });
+
+    console.log(`✏️ Zap ${id} updated`);
+    return NextResponse.json({ success: true, zap });
+  } catch (error) {
+    console.error("Edit zap error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

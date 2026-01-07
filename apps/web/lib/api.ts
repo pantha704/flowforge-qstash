@@ -143,6 +143,21 @@ class ApiClient {
     });
   }
 
+  async updateZap(id: string, data: {
+    triggerMetadata?: Record<string, unknown>;
+    actions?: Array<{
+      id?: string;
+      availableActionId: string;
+      actionMetadata: Record<string, unknown>;
+    }>;
+    maxRuns?: number;
+  }): Promise<{ success: boolean; zap: { id: string } }> {
+    return this.request(`/zap/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
   // Run history
   async getRuns(userId: number, limit = 50): Promise<{
     success: boolean;

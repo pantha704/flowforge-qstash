@@ -6,6 +6,7 @@ interface ZapBuilderStore {
   selectedTrigger: AvailableTrigger | null;
   triggerMetadata: Record<string, unknown>;
   actions: ZapBuilderAction[];
+  editingZapId: string | null; // Track if we're editing
 
   // Actions
   setTrigger: (trigger: AvailableTrigger | null) => void;
@@ -15,12 +16,15 @@ interface ZapBuilderStore {
   updateActionMetadata: (actionId: string, metadata: Record<string, unknown>) => void;
   reorderActions: (fromIndex: number, toIndex: number) => void;
   reset: () => void;
+  // Hydrate store for editing
+  hydrate: (zapId: string, trigger: AvailableTrigger, triggerMeta: Record<string, unknown>, actions: ZapBuilderAction[]) => void;
 }
 
 const initialState = {
   selectedTrigger: null,
   triggerMetadata: {},
   actions: [],
+  editingZapId: null,
 };
 
 export const useZapBuilderStore = create<ZapBuilderStore>((set) => ({
@@ -63,6 +67,14 @@ export const useZapBuilderStore = create<ZapBuilderStore>((set) => ({
     }),
 
   reset: () => set(initialState),
+
+  hydrate: (zapId, trigger, triggerMeta, actions) =>
+    set({
+      editingZapId: zapId,
+      selectedTrigger: trigger,
+      triggerMetadata: triggerMeta,
+      actions,
+    }),
 }));
 
 // Auth store

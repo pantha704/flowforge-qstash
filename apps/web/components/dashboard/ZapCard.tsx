@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import {
   ArrowRight, Trash2, Zap as ZapIcon, Copy, Check, Clock, Webhook, Calendar,
-  Mail, FileSpreadsheet, FolderOpen, FileText, Globe, Trello, Phone, Infinity
+  Mail, FileSpreadsheet, FolderOpen, FileText, Globe, Trello, Phone, Infinity, Pencil
 } from "lucide-react";
 import { SlackIcon, DiscordIcon, NotionIcon } from "@/components/icons";
 import { toast } from "sonner";
@@ -342,17 +342,32 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
             </span>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(zap.id);
-          }}
-          className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = `/zap/edit/${zap.id}`;
+            }}
+            className="text-muted-foreground hover:text-primary h-8 w-8 p-0"
+            title="Edit Zap"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(zap.id);
+            }}
+            className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
+            title="Delete Zap"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </Card>
   );
