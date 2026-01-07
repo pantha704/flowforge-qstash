@@ -70,11 +70,39 @@ function buildCronExpression(
 
 // Enhanced Scheduler Form Component
 function SchedulerForm({ metadata, onChange }: { metadata: Record<string, unknown>; onChange: (m: Record<string, unknown>) => void }) {
-  const [startTime, setStartTime] = useState((metadata.startTime as string) || "12:00");
-  const [timezone, setTimezone] = useState((metadata.timezone as string) || "UTC");
+  // Auto-detect user's timezone
+  const getDefaultTimezone = () => {
+    try {
+      const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // Check if detected timezone is in our list
+      const found = TIMEZONES.find(tz => tz.value === detected);
+      return found ? detected : "UTC";
+    } catch {
+      return "UTC";
+    }
+  };
+
+  // Get time 1 hour from now
+  const getDefaultStartTime = () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  // Get today's date
+  const getDefaultStartDate = () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 1); // Account for potential date rollover
+    return now.toISOString().split("T")[0];
+  };
+
+  const [startTime, setStartTime] = useState((metadata.startTime as string) || getDefaultStartTime());
+  const [timezone, setTimezone] = useState((metadata.timezone as string) || getDefaultTimezone());
   const [intervalValue, setIntervalValue] = useState((metadata.intervalValue as number) || 30);
   const [intervalUnit, setIntervalUnit] = useState((metadata.intervalUnit as string) || "minutes");
-  const [startDate, setStartDate] = useState((metadata.startDate as string) || new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState((metadata.startDate as string) || getDefaultStartDate());
   const [useAdvanced, setUseAdvanced] = useState(false);
   const [customCron, setCustomCron] = useState((metadata.cronExpression as string) || "");
 
