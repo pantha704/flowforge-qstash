@@ -169,8 +169,8 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
       {/* Trigger and Action Flow */}
       <div className="flex items-center gap-3 mb-4">
         {/* Trigger Icon */}
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${triggerStyle.bg} ${triggerStyle.text} ${ICON_ANIMATIONS[triggerName] || 'animate-icon-zap'}`}>
-          <TriggerIcon className="h-5 w-5" />
+        <div className={`group flex h-10 w-10 items-center justify-center rounded-lg ${triggerStyle.bg} ${triggerStyle.text}`}>
+          <TriggerIcon className={`h-5 w-5 ${ICON_ANIMATIONS[triggerName] || 'animate-icon-zap'}`} />
         </div>
 
         {/* Arrow */}
@@ -186,10 +186,10 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
               return (
                 <div
                   key={index}
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${actionStyle.bg} ${actionStyle.text} border-2 border-background ${ICON_ANIMATIONS[actionName] || 'animate-icon-zap'}`}
+                  className={`group flex h-10 w-10 items-center justify-center rounded-lg ${actionStyle.bg} ${actionStyle.text} border-2 border-background`}
                   title={actionName}
                 >
-                  <ActionIcon className="h-4 w-4" />
+                  <ActionIcon className={`h-4 w-4 ${ICON_ANIMATIONS[actionName] || 'animate-icon-zap'}`} />
                 </div>
               );
             })
@@ -217,9 +217,9 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
               return (
                 <div
                   key={index}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${actionStyle.bg} ${actionStyle.text} ${ICON_ANIMATIONS[actionName] || 'animate-icon-zap'}`}
+                  className={`group flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${actionStyle.bg} ${actionStyle.text}`}
                 >
-                  <ActionIcon className="w-3 h-3" />
+                  <ActionIcon className={`w-3 h-3 ${ICON_ANIMATIONS[actionName] || 'animate-icon-zap'}`} />
                   <span className="truncate max-w-24">{actionName}</span>
                 </div>
               );

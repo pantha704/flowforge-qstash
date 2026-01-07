@@ -281,35 +281,35 @@
   }
 }
 
-/* Animation classes */
-.animate-icon-rotate:hover {
+/* Animation classes - triggered by parent group hover */
+.group:hover .animate-icon-rotate {
   animation: icon-rotate 0.6s ease-in-out;
 }
-.animate-icon-mail:hover {
+.group:hover .animate-icon-mail {
   animation: icon-mail 0.5s ease-in-out;
 }
-.animate-icon-clock:hover {
+.group:hover .animate-icon-clock {
   animation: icon-clock 1s linear;
 }
-.animate-icon-message:hover {
+.group:hover .animate-icon-message {
   animation: icon-message 0.4s ease-in-out;
 }
-.animate-icon-globe:hover {
+.group:hover .animate-icon-globe {
   animation: icon-globe 0.8s ease-in-out;
 }
-.animate-icon-phone:hover {
+.group:hover .animate-icon-phone {
   animation: icon-phone 0.5s ease-in-out;
 }
-.animate-icon-file:hover {
+.group:hover .animate-icon-file {
   animation: icon-file 0.4s ease-in-out;
 }
-.animate-icon-folder:hover {
+.group:hover .animate-icon-folder {
   animation: icon-folder 0.4s ease-in-out;
 }
-.animate-icon-trello:hover {
+.group:hover .animate-icon-trello {
   animation: icon-trello 0.3s ease-in-out;
 }
-.animate-icon-zap:hover {
+.group:hover .animate-icon-zap {
   animation: icon-zap 0.3s ease-in-out;
 }
 

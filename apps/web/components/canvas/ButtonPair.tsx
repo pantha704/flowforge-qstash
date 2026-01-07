@@ -107,18 +107,29 @@ export function ButtonPair({ hasActions, onSave, canSave, isSaving }: ButtonPair
               filteredActions.map((action) => {
                 const style = getActionStyle(action.name);
                 const Icon = style.icon;
+                const isDisabled = style.disabled;
                 return (
                   <button
                     key={action.id}
                     type="button"
-                    className={`w-full text-left py-4 px-4 rounded-lg hover:${style.bg} transition-colors cursor-pointer border-0 bg-transparent`}
-                    onClick={() => handleSelectAction(action)}
+                    className={`w-full text-left py-4 px-4 rounded-lg transition-colors border-0 bg-transparent ${
+                      isDisabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : `hover:${style.bg} cursor-pointer`
+                    }`}
+                    onClick={() => !isDisabled && handleSelectAction(action)}
+                    disabled={isDisabled}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.bg} ${style.text} shrink-0`}>
                         <Icon className="h-6 w-6" />
                       </div>
-                      <span className="font-medium text-base text-foreground">{action.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-base text-foreground">{action.name}</span>
+                        {style.disabledReason && (
+                          <span className="text-xs text-muted-foreground">{style.disabledReason}</span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 );
