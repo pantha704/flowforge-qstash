@@ -121,7 +121,7 @@ export default function Hero() {
 
           <h1
             ref={titleRef}
-            className="text-2xl z-12 xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 px-4 w-full"
+            className="text-2xl z-20 xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 px-4 w-full"
             style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
           >
             Automate at the speed of thought.
