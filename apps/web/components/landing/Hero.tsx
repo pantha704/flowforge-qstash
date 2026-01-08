@@ -97,7 +97,7 @@ export default function Hero() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10 mix-blend-screen dark:mix-blend-lighten opacity-50" />
 
       <div className="container mx-auto px-6 md:px-8 relative z-10 text-center">
-        <div className="space-y-8 md:space-y-10 max-w-4xl mx-auto z-20">
+        <div className="space-y-8 md:space-y-10 max-w-4xl mx-auto relative z-20">
           {/* "Not backed by Y Combinator" Badge */}
           <div className="flex justify-center mb-12 -mt-4">
             <HoverBorderGradient
@@ -121,7 +121,7 @@ export default function Hero() {
 
           <h1
             ref={titleRef}
-            className="text-2xl z-20 xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 px-4 w-full"
+            className="text-2xl z-12 xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent pb-2 px-4 w-full"
             style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
           >
             Automate at the speed of thought.
@@ -182,7 +182,7 @@ export default function Hero() {
         {/* Decorative Floating Elements */}
         <div
           ref={decorativeRef}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-10 opacity-40 max-w-[1400px]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-5 opacity-40 max-w-[1400px]"
         >
           {/* Row 1: Settings - Left (curved in from edge) */}
           <div className="absolute top-[15%] left-[10%] p-3 mt-2 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-medium hidden lg:block">
