@@ -174,7 +174,7 @@ export default function Hero() {
               />
 
               {/* Radial Gradient to prevent sharp edges */}
-              <div className="absolute inset-0 w-full h-full bg-background [mask-image:radial-gradient(500px_300px_at_top,transparent_20%,white)]"></div>
+              <div className="absolute inset-0 w-full h-full [mask-image:radial-gradient(500px_300px_at_top,transparent_20%,white)]"></div>
             </div>
           </div>
         </div>
