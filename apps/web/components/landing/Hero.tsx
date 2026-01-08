@@ -186,42 +186,42 @@ export default function Hero() {
         >
           {/* Row 1: Settings - Left (curved in from edge) */}
           <div className="absolute top-[15%] left-[10%] p-3 mt-2 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-medium hidden lg:block">
-             <Settings className="w-6 h-6 text-rose-500" />
+             <Settings className="w-6 h-6 text-rose-500" style={{ filter: 'drop-shadow(0 0 8px rgb(244 63 94 / 0.6))' }} />
           </div>
 
           {/* Row 2: CheckCircle - Right (curved in from edge) */}
           <div className="absolute top-[20%] right-[7%] p-4 mt-2 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-2xl shadow-lg animate-float-slow hidden lg:block">
-             <CheckCircle2 className="w-8 h-8 text-green-500" />
+             <CheckCircle2 className="w-8 h-8 text-green-500" style={{ filter: 'drop-shadow(0 0 8px rgb(34 197 94 / 0.6))' }} />
           </div>
 
           {/* Row 3: Zap - Left (widest point) */}
           <div className="absolute top-[35%] left-[3%] p-4 mb-2 ml-1 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-2xl shadow-lg animate-float-fast hidden lg:block">
-             <Zap className="w-8 h-8 text-cyan-500" />
+             <Zap className="w-8 h-8 text-cyan-500" style={{ filter: 'drop-shadow(0 0 8px rgb(6 182 212 / 0.6))' }} />
           </div>
 
           {/* Row 4: Database - Right (widest point) */}
           <div className="absolute top-[40%] right-[3%] p-3 mb-2 ml-1 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-medium hidden lg:block">
-             <Database className="w-6 h-6 text-purple-500" />
+             <Database className="w-6 h-6 text-purple-500" style={{ filter: 'drop-shadow(0 0 8px rgb(168 85 247 / 0.6))' }} />
           </div>
 
           {/* Row 5: Mail - Left (middle) */}
           <div className="absolute top-[55%] left-[4%] p-3 mb-2 ml-1 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-slow hidden lg:block">
-             <Mail className="w-6 h-6 text-blue-500" />
+             <Mail className="w-6 h-6 text-blue-500" style={{ filter: 'drop-shadow(0 0 8px rgb(59 130 246 / 0.6))' }} />
           </div>
 
           {/* Row 6: Bell - Right (middle) */}
           <div className="absolute top-[58%] right-[4%] p-3 mb-2 ml-1 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-fast hidden lg:block">
-             <Bell className="w-6 h-6 text-yellow-500" />
+             <Bell className="w-6 h-6 text-yellow-500" style={{ filter: 'drop-shadow(0 0 8px rgb(234 179 8 / 0.6))' }} />
           </div>
 
           {/* Row 7: GitBranch - Left (curving back in) */}
           <div className="absolute top-[72%] left-[8%] p-3 mb-2 ml-1 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-medium hidden lg:block">
-             <GitBranch className="w-6 h-6 text-orange-500" />
+             <GitBranch className="w-6 h-6 text-orange-500" style={{ filter: 'drop-shadow(0 0 8px rgb(249 115 22 / 0.6))' }} />
           </div>
 
           {/* Row 8: Webhook - Right (curving back in) */}
           <div className="absolute top-[75%] right-[8%] p-3 mb-2 ml-1 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-slow hidden lg:block">
-             <Webhook className="w-5 h-5 text-teal-500" />
+             <Webhook className="w-5 h-5 text-teal-500" style={{ filter: 'drop-shadow(0 0 8px rgb(20 184 166 / 0.6))' }} />
           </div>
         </div>
       </div>
