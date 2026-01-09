@@ -185,8 +185,8 @@ export default function Hero() {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none opacity-40 max-w-[1400px]"
         >
           {/* Row 1: Settings - Left (curved in from edge) */}
-          <div className="absolute top-[15%] left-[10%] p-3 mt-2 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-medium hidden lg:block">
-             <Settings className="w-6 h-6 text-rose-500" style={{ filter: 'drop-shadow(0 0 8px rgb(244 63 94 / 0.6))' }} />
+          <div className="absolute top-[18%] left-[10%] p-3 mt-2 bg-slate-300/80 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-400/60 dark:border-white/10 rounded-xl shadow-lg animate-float-medium hidden lg:block">
+             <Settings className="w-7 h-7 text-rose-500" style={{ filter: 'drop-shadow(0 0 8px rgb(244 63 94 / 0.6))' }} />
           </div>
 
           {/* Row 2: CheckCircle - Right (curved in from edge) */}

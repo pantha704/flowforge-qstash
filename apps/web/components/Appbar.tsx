@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
-import { ModeToggle } from "./mode-toggle";
+
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Zap, LogOut, BookOpen, Menu } from "lucide-react";
@@ -129,14 +129,10 @@ export const Appbar = () => {
                         router={router}
                         handleLogout={handleLogout}
                     />
-                    <div className="pl-2 border-l border-border/50 ml-2">
-                        <ModeToggle />
-                    </div>
                 </div>
 
                 {/* Mobile Navigation */}
                 <div className="flex md:hidden items-center gap-2">
-                    <ModeToggle />
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-9 w-9">
