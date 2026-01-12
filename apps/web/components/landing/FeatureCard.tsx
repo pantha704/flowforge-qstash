@@ -51,7 +51,7 @@ export default function FeatureCard({
   return (
     <div
       ref={cardRef}
-      className="group relative p-8 rounded-3xl bg-card border border-border/50 hover:border-primary/50 transition-colors duration-500 overflow-hidden"
+      className="group relative p-8 rounded-3xl bg-background border border-border/50 hover:border-primary/50 transition-colors duration-500 overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 

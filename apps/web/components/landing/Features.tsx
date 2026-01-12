@@ -63,7 +63,7 @@ export default function Features() {
   );
 
   return (
-    <section ref={containerRef} className="py-24 px-4 md:px-6 bg-secondary/30">
+    <section ref={containerRef} className="py-24 px-4 md:px-6">
       <div className="container mx-auto max-w-6xl">
         <div ref={headerRef} className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
