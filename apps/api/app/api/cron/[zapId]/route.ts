@@ -37,6 +37,12 @@ export async function POST(
       return NextResponse.json({ error: "Zap not found" }, { status: 404 });
     }
 
+    // ponytail: skip inactive zaps, no need to fan-out work for paused zaps
+    if (!zap.isActive) {
+      console.log(`   ⏸️ Zap is inactive, skipping`);
+      return NextResponse.json({ success: false, message: "Zap is inactive" });
+    }
+
     // Check run limit
     if (zap.maxRuns !== -1 && zap._count.ZapRuns >= zap.maxRuns) {
       console.log(`   ⚠️ Run limit reached (${zap._count.ZapRuns}/${zap.maxRuns})`);
@@ -67,17 +73,15 @@ export async function POST(
 
     console.log(`   📝 Created ZapRun: ${zapRun.id}`);
 
-    // Queue the first action to the worker via QStash
+    // ponytail: call worker directly instead of QStash double-hop (saves rate limit)
     const appUrl = process.env.APP_URL || "http://localhost:3001";
-    await qstash.publishJSON({
-      url: `${appUrl}/api/worker`,
-      body: {
-        zapRunId: zapRun.id,
-        stage: 0,
-      },
+    await fetch(`${appUrl}/api/worker`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zapRunId: zapRun.id, stage: 0 }),
     });
 
-    console.log(`   ✅ Queued to worker`);
+    console.log(`   ✅ Triggered worker`);
 
     return NextResponse.json({ success: true, zapRunId: zapRun.id });
   } catch (error) {
