@@ -39,6 +39,7 @@ export default function CreateZapPage() {
   const [zapName, setZapName] = useState<string>("");
   const [zapDescription, setZapDescription] = useState<string>("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -169,6 +170,262 @@ export default function CreateZapPage() {
 
   const canSave = !!(selectedTrigger && actions.length > 0);
 
+  type TemplateKind =
+    | "webhook-discord"
+    | "form-email"
+    | "schedule-http"
+    | "github-discord"
+    | "manual-log"
+    | "rss-discord"
+    | "form-filter-discord";
+
+  /** Safe starter templates — only uses ready triggers/actions if present in API. */
+  const applyTemplate = async (kind: TemplateKind) => {
+    setApplyingTemplate(true);
+    try {
+      const [trigRes, actRes] = await Promise.all([
+        api.getAvailableTriggers(),
+        api.getAvailableActions(),
+      ]);
+      if (!trigRes.success || !actRes.success) {
+        toast.error("Failed to load catalog for template");
+        return;
+      }
+
+      const findTrigger = (name: string) =>
+        trigRes.availableTriggers.find((t) => t.name === name);
+      const findAction = (name: string) =>
+        actRes.availableActions.find((a) => a.name === name);
+
+      const need = (names: string[], kindLabel: "trigger" | "action") => {
+        const missing = names.filter(
+          (n) => !(kindLabel === "trigger" ? findTrigger(n) : findAction(n))
+        );
+        if (missing.length) {
+          toast.error(
+            `Missing ${kindLabel}(s): ${missing.join(", ")}. Run packages/db seed.`
+          );
+          return false;
+        }
+        return true;
+      };
+
+      if (kind === "webhook-discord") {
+        if (!need(["Webhook"], "trigger") || !need(["Send Discord Message"], "action")) return;
+        useZapBuilderStore.setState({
+          editingZapId: null,
+          selectedTrigger: findTrigger("Webhook")!,
+          triggerMetadata: {},
+          actions: [
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Send Discord Message")!,
+              actionMetadata: {
+                webhookUrl: "",
+                message: "🔔 Webhook: {{message}} (event={{event}})",
+              },
+            },
+          ],
+        });
+        setZapName("Webhook → Discord");
+        setZapDescription("Forward webhook payloads to Discord");
+        toast.success("Template applied — add Discord webhook URL");
+      } else if (kind === "github-discord") {
+        if (!need(["Webhook"], "trigger") || !need(["Filter Condition", "Send Discord Message", "Log Message"], "action")) return;
+        useZapBuilderStore.setState({
+          editingZapId: null,
+          selectedTrigger: findTrigger("Webhook")!,
+          triggerMetadata: {},
+          actions: [
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Log Message")!,
+              actionMetadata: {
+                message: "GitHub event={{action}} repo={{repository.full_name}}",
+              },
+            },
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Filter Condition")!,
+              actionMetadata: {
+                left: "{{action}}",
+                operator: "equals",
+                right: "opened",
+              },
+            },
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Send Discord Message")!,
+              actionMetadata: {
+                webhookUrl: "",
+                message:
+                  "🐙 PR/Issue opened: {{pull_request.title}}{{issue.title}} by {{sender.login}} — {{pull_request.html_url}}{{issue.html_url}}",
+              },
+            },
+          ],
+        });
+        setZapName("GitHub webhook → Discord (opened only)");
+        setZapDescription(
+          "Point a GitHub repo webhook at FlowForge. Filter keeps only action=opened."
+        );
+        toast.success("Template applied — set Discord URL + GitHub webhook");
+      } else if (kind === "form-email") {
+        if (!need(["New Form Submission"], "trigger") || !need(["Send Email"], "action")) return;
+        useZapBuilderStore.setState({
+          editingZapId: null,
+          selectedTrigger: findTrigger("New Form Submission")!,
+          triggerMetadata: {
+            title: "Contact form",
+            fields: "name,email,message",
+            successMessage: "Thanks — we'll be in touch!",
+          },
+          actions: [
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Send Email")!,
+              actionMetadata: {
+                to: "{{email}}",
+                subject: "New form from {{name}}",
+                body: "Message:\n{{message}}",
+              },
+            },
+          ],
+        });
+        setZapName("Form → Email");
+        setZapDescription("Public form → email with templates");
+        toast.success("Template applied");
+      } else if (kind === "form-filter-discord") {
+        if (
+          !need(["New Form Submission"], "trigger") ||
+          !need(["Set Variable", "Filter Condition", "Send Discord Message"], "action")
+        )
+          return;
+        useZapBuilderStore.setState({
+          editingZapId: null,
+          selectedTrigger: findTrigger("New Form Submission")!,
+          triggerMetadata: {
+            title: "Lead form",
+            fields: "name,email,message,priority",
+            successMessage: "Got it!",
+          },
+          actions: [
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Set Variable")!,
+              actionMetadata: { key: "who", value: "{{name}} <{{email}}>" },
+            },
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Filter Condition")!,
+              actionMetadata: {
+                left: "{{priority}}",
+                operator: "equals",
+                right: "high",
+              },
+            },
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Send Discord Message")!,
+              actionMetadata: {
+                webhookUrl: "",
+                message: "🔥 High priority from {{vars.who}}: {{message}}",
+              },
+            },
+          ],
+        });
+        setZapName("Form → high-priority Discord");
+        setZapDescription("Only notifies Discord when priority=high");
+        toast.success("Template applied — add Discord webhook URL");
+      } else if (kind === "manual-log") {
+        if (!need(["Manual"], "trigger") || !need(["Log Message", "HTTP Request"], "action")) return;
+        useZapBuilderStore.setState({
+          editingZapId: null,
+          selectedTrigger: findTrigger("Manual")!,
+          triggerMetadata: {
+            samplePayload: JSON.stringify(
+              { message: "hello manual", status: "ok" },
+              null,
+              2
+            ),
+          },
+          actions: [
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Log Message")!,
+              actionMetadata: { message: "Manual run: {{message}}" },
+            },
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("HTTP Request")!,
+              actionMetadata: {
+                url: "https://httpbin.org/post",
+                method: "POST",
+                body: '{"echo":"{{message}}","status":"{{status}}"}',
+              },
+            },
+          ],
+        });
+        setZapName("Manual test → log + HTTP");
+        setZapDescription("Dashboard Run button fires sample payload");
+        toast.success("Template applied — save then click Run");
+      } else if (kind === "rss-discord") {
+        if (!need(["RSS Feed"], "trigger") || !need(["Send Discord Message"], "action")) return;
+        useZapBuilderStore.setState({
+          editingZapId: null,
+          selectedTrigger: findTrigger("RSS Feed")!,
+          triggerMetadata: {
+            feedUrl: "https://hnrss.org/frontpage",
+            pollCron: "*/30 * * * *",
+          },
+          actions: [
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("Send Discord Message")!,
+              actionMetadata: {
+                webhookUrl: "",
+                message: "📰 {{title}}\n{{link}}",
+              },
+            },
+          ],
+        });
+        setZapName("RSS → Discord");
+        setZapDescription("Poll public RSS; notify Discord on new items");
+        toast.success("Template applied — Discord URL + QStash required for poll");
+      } else {
+        // schedule-http
+        if (!need(["Schedule (Cron)"], "trigger") || !need(["HTTP Request"], "action")) return;
+        useZapBuilderStore.setState({
+          editingZapId: null,
+          selectedTrigger: findTrigger("Schedule (Cron)")!,
+          triggerMetadata: {
+            cronExpression: "0 9 * * *",
+            intervalValue: 1,
+            intervalUnit: "days",
+            timezone: "UTC",
+          },
+          actions: [
+            {
+              id: crypto.randomUUID(),
+              availableAction: findAction("HTTP Request")!,
+              actionMetadata: {
+                url: "https://httpbin.org/post",
+                method: "POST",
+                body: '{"source":"flowforge-schedule","note":"daily ping"}',
+              },
+            },
+          ],
+        });
+        setZapName("Daily HTTP ping");
+        setZapDescription("Cron → HTTP (httpbin demo)");
+        toast.success("Template applied");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Template failed");
+    } finally {
+      setApplyingTemplate(false);
+    }
+  };
+
   return (
     <div ref={containerRef} className="min-h-[calc(100vh-64px)] p-4 md:p-8">
       <div className="container mx-auto max-w-2xl">
@@ -246,6 +503,38 @@ export default function CreateZapPage() {
 
         {/* Canvas - Centered */}
         <div ref={canvasRef} className="flex flex-col items-center">
+          {/* Starter templates (Tier A) */}
+          <Card className="w-full mb-6 p-4 bg-card/60 border-border/50">
+            <p className="text-sm font-medium mb-1">Start from a template</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Optional presets. You can still build from scratch below. Templates use safe{" "}
+              <code className="text-[10px]">{"{{field}}"}</code> placeholders.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" disabled={applyingTemplate} onClick={() => applyTemplate("webhook-discord")}>
+                Webhook → Discord
+              </Button>
+              <Button type="button" variant="outline" size="sm" disabled={applyingTemplate} onClick={() => applyTemplate("github-discord")}>
+                GitHub → Discord
+              </Button>
+              <Button type="button" variant="outline" size="sm" disabled={applyingTemplate} onClick={() => applyTemplate("form-email")}>
+                Form → Email
+              </Button>
+              <Button type="button" variant="outline" size="sm" disabled={applyingTemplate} onClick={() => applyTemplate("form-filter-discord")}>
+                Form (high prio) → Discord
+              </Button>
+              <Button type="button" variant="outline" size="sm" disabled={applyingTemplate} onClick={() => applyTemplate("manual-log")}>
+                Manual → Log + HTTP
+              </Button>
+              <Button type="button" variant="outline" size="sm" disabled={applyingTemplate} onClick={() => applyTemplate("rss-discord")}>
+                RSS → Discord
+              </Button>
+              <Button type="button" variant="outline" size="sm" disabled={applyingTemplate} onClick={() => applyTemplate("schedule-http")}>
+                Schedule → HTTP
+              </Button>
+            </div>
+          </Card>
+
           {/* Step 1: Name & Description */}
           <Card className="w-full max-w-lg p-5 bg-card/80 backdrop-blur-sm border-border/50 mb-4">
             <div className="flex items-center gap-2 mb-4">

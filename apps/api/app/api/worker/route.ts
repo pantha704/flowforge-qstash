@@ -1,25 +1,39 @@
 import { prismaClient } from "@repo/db";
-import { executeAction } from "@repo/executors";
+import {
+  executeAction,
+  resolveTemplates,
+  isFilterStop,
+} from "@repo/executors";
 import { NextRequest, NextResponse } from "next/server";
-
-// For production, you would use verifySignatureAppRouter from @upstash/qstash/nextjs
-// import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
+import { assertWorkerAuth } from "../../../lib/security";
 
 async function handler(req: NextRequest) {
-  const { zapRunId } = await req.json();
+  // Opt-in: only enforced when WORKER_SECRET is set
+  const authError = assertWorkerAuth(req);
+  if (authError) return authError;
+
+  let zapRunId: string | undefined;
+  try {
+    const body = await req.json();
+    zapRunId = body?.zapRunId;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (!zapRunId || typeof zapRunId !== "string") {
+    return NextResponse.json({ error: "Missing zapRunId" }, { status: 400 });
+  }
 
   console.log(`\n${"=".repeat(60)}`);
   console.log(`🚀 Processing ZapRun: ${zapRunId}`);
   console.log(`${"=".repeat(60)}`);
 
-  // Update status to running
   await prismaClient.zapRun.update({
     where: { id: zapRunId },
     data: { status: "running" },
   });
 
   try {
-    // Fetch the zap with its actions
     const zapRun = await prismaClient.zapRun.findUnique({
       where: { id: zapRunId },
       include: {
@@ -51,7 +65,6 @@ async function handler(req: NextRequest) {
       return NextResponse.json({ error: "ZapRun not found" }, { status: 404 });
     }
 
-    // Fetch user's Google OAuth token for Sheets/Drive actions
     let googleAccessToken: string | null = null;
     const userId = zapRun.zap.userId;
     const googleConnection = await prismaClient.userConnection.findUnique({
@@ -65,16 +78,28 @@ async function handler(req: NextRequest) {
     console.log(`📋 Zap has ${zapRun.zap.actions.length} action(s)`);
     console.log(`📦 Trigger payload:`, zapRun.metadata);
 
+    // Mutable run variables (Set Variable action)
+    const vars: Record<string, unknown> = {};
+
     let hasError = false;
     let errorMessage = "";
+    let filteredStop = false;
 
-    // Execute each action in order
     for (let i = 0; i < zapRun.zap.actions.length; i++) {
       const action = zapRun.zap.actions[i]!;
       const actionName = action.type.name;
-      const metadata = action.metadata as Record<string, unknown>;
+      const rawMetadata = (action.metadata || {}) as Record<string, unknown>;
 
-      // Inject OAuth tokens for Google-related actions
+      const templateContext = {
+        trigger: zapRun.metadata,
+        run: { id: zapRun.id, zapId: zapRun.zapId, vars },
+      };
+
+      const metadata = resolveTemplates(rawMetadata, templateContext) as Record<
+        string,
+        unknown
+      >;
+
       if (actionName === "Create Spreadsheet Row" && googleAccessToken) {
         metadata._googleAccessToken = googleAccessToken;
       }
@@ -84,37 +109,62 @@ async function handler(req: NextRequest) {
       );
 
       try {
+        // Set Variable mutates shared vars for later steps
+        if (actionName === "Set Variable") {
+          const key = String(metadata.key || "").trim();
+          if (key) {
+            vars[key] = metadata.value ?? "";
+            console.log(`   ✅ vars.${key} =`, vars[key]);
+          } else {
+            console.log(`   ⚠️ Set Variable skipped — empty key`);
+          }
+          await executeAction(actionName, metadata);
+          continue;
+        }
+
         await executeAction(actionName, metadata);
         console.log(`✅ Action completed: ${actionName}`);
       } catch (error) {
+        if (isFilterStop(error)) {
+          filteredStop = true;
+          console.log(`   🛑 Pipeline stopped by Filter Condition`);
+          break;
+        }
         console.error(`❌ Action failed: ${actionName}`, error);
         hasError = true;
         errorMessage = error instanceof Error ? error.message : "Unknown error";
-        // Continue with next action (don't break)
+        // Continue with next action (existing behavior for real failures)
       }
     }
 
+    const status = hasError ? "failed" : "success";
+    const finalError = hasError
+      ? errorMessage
+      : filteredStop
+        ? null
+        : null;
 
-    // Update final status
     await prismaClient.zapRun.update({
       where: { id: zapRunId },
       data: {
-        status: hasError ? "failed" : "success",
-        error: hasError ? errorMessage : null,
+        status,
+        error: finalError,
         completedAt: new Date(),
       },
     });
 
-    console.log(`\n✨ ZapRun ${zapRunId} completed! Status: ${hasError ? "failed" : "success"}\n`);
+    console.log(
+      `\n✨ ZapRun ${zapRunId} completed! Status: ${status}${filteredStop ? " (filter stop)" : ""}\n`
+    );
 
     return NextResponse.json({
       success: true,
-      status: hasError ? "failed" : "success",
+      status,
+      filtered: filteredStop,
     });
   } catch (error) {
     console.error("Worker error:", error);
 
-    // Update status to failed
     await prismaClient.zapRun.update({
       where: { id: zapRunId },
       data: {
@@ -131,8 +181,4 @@ async function handler(req: NextRequest) {
   }
 }
 
-// For production with QStash signature verification:
-// export const POST = verifySignatureAppRouter(handler);
-
-// For local development (no QStash callback verification):
 export { handler as POST };

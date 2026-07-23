@@ -32,22 +32,21 @@
 │                       ├── /api/action/available                 │
 │                       └── /api/schedule (QStash cron)           │
 │                                                                 │
-│  [External Webhook]                                             │
+│  [Webhook] [Public Form] [QStash Cron]                          │
+│        │         │              │                               │
+│        ▼         ▼              ▼                               │
+│  /api/hooks/*  /api/forms/*  /api/cron/*                        │
 │        │                                                        │
-│        ▼                                                        │
-│  POST /api/hooks/[userId]/[zapId]                               │
-│        │                                                        │
-│        ├── 1. Create ZapRun record in DB                        │
-│        ├── 2. (Local) Call /api/worker directly                 │
-│        └── 2. (Prod) QStash.publish() → /api/worker             │
+│        ├── 1. Create ZapRun (trigger payload)                   │
+│        └── 2. Call /api/worker (optional WORKER_SECRET)         │
 │                                                │                │
 │                                                ▼                │
-│                                          Execute Actions        │
-│                                          (Email, HTTP, etc.)    │
+│                          resolveTemplates + executeAction       │
+│                          (Email, HTTP, Discord, …)              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**No Processor, No Kafka, No Docker!**
+**No Processor, No Kafka, No Docker!** Cron uses QStash schedules; worker is a direct call (cost-friendly free tier).
 
 ## 📦 Project Structure
 
@@ -70,11 +69,13 @@ flowforge-qstash/
 
 ## ✨ Features
 
-- **Triggers**: Webhook, Schedule (Cron)
-- **Actions**: Send Email (Resend), HTTP Request, Discord/Slack webhooks
-- **Auth**: JWT-based authentication
-- **UI**: Modern glassmorphic design with GSAP animations
-- **Serverless**: Fully serverless, scales to zero
+- **Triggers**: Webhook, Schedule (Cron), Manual (test run), New Form Submission, RSS Feed poll
+- **Actions**: Email, HTTP, Discord/Slack, Filter, Delay, Log, Set Variable (+ Sheets/Notion/Trello when keyed)
+- **Templates**: `{{field}}`, `{{trigger.path}}`, `{{vars.name}}` (missing keys → empty string)
+- **Auth**: JWT + optional Google/GitHub login
+- **Safety (opt-in)**: `WORKER_SECRET`, per-Zap webhook HMAC, form honeypot
+- **UI**: Run History with payload inspector, Test Run, starter templates (GitHub, RSS, filters)
+- **Serverless**: Scales to zero; cron/RSS via QStash
 
 ## 🚀 Quick Start
 
@@ -88,21 +89,33 @@ bun install
 
 ### 2. Environment Setup
 
-```bash
-# packages/db/.env
-DATABASE_URL="postgresql://..."
+Copy the examples (safe defaults; optional secrets leave empty):
 
-# apps/api/.env.local
+```bash
+cp packages/db/.env.example packages/db/.env
+cp apps/api/.env.example apps/api/.env.local
+cp apps/web/.env.example apps/web/.env.local
+```
+
+| File | Purpose |
+|------|---------|
+| `packages/db/.env.example` | Prisma `DATABASE_URL` |
+| `apps/api/.env.example` | API, QStash, Resend, optional `WORKER_SECRET` |
+| `apps/web/.env.example` | `NEXT_PUBLIC_API_URL` |
+
+```bash
+# apps/api/.env.local (essentials)
 DATABASE_URL="postgresql://..."
 JWT_SECRET="your-secret"
 QSTASH_TOKEN="qstash_xxx"                 # From Upstash Console
-QSTASH_CURRENT_SIGNING_KEY="sig_xxx"      # For webhook verification
+QSTASH_CURRENT_SIGNING_KEY="sig_xxx"
 QSTASH_NEXT_SIGNING_KEY="sig_xxx"
-RESEND_API_KEY="re_xxx"                   # From Resend.com
-APP_URL="http://localhost:3002"           # Your API URL
+RESEND_API_KEY="re_xxx"                   # optional
+APP_URL="http://localhost:3001"           # API origin (no /api suffix)
+# WORKER_SECRET=""                        # optional — when set, protects /api/worker
 
 # apps/web/.env.local
-NEXT_PUBLIC_API_URL="http://localhost:3002/api"
+NEXT_PUBLIC_API_URL="http://localhost:3001/api"
 ```
 
 ### 3. Get Credentials
@@ -157,16 +170,51 @@ Quick overview:
 | `DATABASE_URL`               | PostgreSQL connection string              |
 | `JWT_SECRET`                 | Secret for JWT tokens                     |
 | `QSTASH_TOKEN`               | Upstash QStash token                      |
-| `QSTASH_CURRENT_SIGNING_KEY` | For webhook verification                  |
+| `QSTASH_CURRENT_SIGNING_KEY` | For QStash webhook verification           |
 | `QSTASH_NEXT_SIGNING_KEY`    | Rotated signing key                       |
-| `RESEND_API_KEY`             | Resend API key for emails                 |
-| `APP_URL`                    | Your deployed API URL (no trailing slash) |
+| `RESEND_API_KEY`             | Resend API key for emails (optional)      |
+| `APP_URL`                    | Public API URL for **QStash** callbacks (production) |
+| `WORKER_SECRET`              | Optional shared secret for `/api/worker`  |
+
+> **Local dev:** In `next dev`, the worker always calls `http://localhost:PORT` even if `APP_URL` points at Vercel — so local DB + worker stay in sync. QStash schedules still need a public `APP_URL` (or tunnel) to hit your machine.
 
 ### Web (apps/web)
 
 | Variable              | Description                |
 | --------------------- | -------------------------- |
 | `NEXT_PUBLIC_API_URL` | API URL with `/api` suffix |
+
+## 🔌 Trigger → action data flow
+
+1. Webhook / form / cron / RSS / manual creates a `ZapRun` with trigger payload in `metadata`
+2. Worker runs `resolveTemplates` then each action (Filter can stop the chain without failing)
+3. `Set Variable` writes `run.vars` → later steps use `{{vars.myKey}}`
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/hooks/:userId/:zapId` | Webhook |
+| `GET/POST /api/forms/:userId/:zapId` | Public form (+ honeypot) |
+| `POST /api/cron/:zapId` | Schedule callback (QStash) |
+| `POST /api/poll/rss/:zapId` | RSS poll (QStash) |
+| `POST /api/zap/:id/run` | Manual / test run (JWT) |
+
+Optional HMAC for webhooks:
+
+```bash
+BODY='{"message":"hi"}'
+SIG=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "your-secret" | awk '{print $2}')
+curl -X POST "$HOOK_URL" -H "Content-Type: application/json" \
+  -H "x-flowforge-signature: $SIG" -d "$BODY"
+```
+
+**GitHub recipe:** Create zap from template “GitHub → Discord”, copy webhook URL into repo → Settings → Webhooks (JSON). Filter step keeps `action=opened`.
+
+**RSS:** First poll only baselines `lastGuid` (no flood); later new items fire the zap.
+
+## 🤖 AI tools used
+
+AI assistants (Claude / Cursor / Grok) helped with scaffolding UI, docs, and boilerplate.
+Architecture decisions (webhook → ZapRun → worker → executors, QStash for cron, opt-in secrets, form trigger) and the runtime paths are intentionally small enough to change without AI in an interview.
 
 ## 🙏 Inspiration
 

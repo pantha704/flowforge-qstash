@@ -2,64 +2,63 @@
 
 ## Triggers
 
-| Trigger                    | Status  | Implementation Notes                                                   |
-| -------------------------- | ------- | ---------------------------------------------------------------------- |
-| **Webhook**                | ✅ Done | External services call `/api/hooks/:userId/:zapId`                     |
-| **Schedule (Cron)**        | ✅ Done | `/api/schedule` - Uses QStash Schedules API                            |
-| **New Email Received**     | ❌ TODO | Requires email provider with inbound hooks (Resend, Mailgun, SendGrid) |
-| **New Form Submission**    | ❌ TODO | Build form builder + public form endpoints                             |
-| **New Row in Spreadsheet** | ❌ TODO | Google Sheets API + OAuth + polling/webhooks                           |
-| **New File in Drive**      | ❌ TODO | Google Drive API + OAuth + push notifications                          |
+| Trigger                    | Status  | Notes |
+| -------------------------- | ------- | ----- |
+| **Webhook**                | ✅ Done | Optional HMAC `webhookSecret` |
+| **Schedule (Cron)**        | ✅ Done | QStash → `/api/cron/:zapId` |
+| **Manual**                 | ✅ Done | Dashboard **Run** / `POST /api/zap/:id/run` |
+| **New Form Submission**    | ✅ Done | Hosted form + honeypot + embed snippet |
+| **RSS Feed**               | ✅ Done | QStash poll → `/api/poll/rss/:zapId` (public feeds) |
+| **New Email Received**     | ❌ TODO | Needs inbound email provider |
+| **New Row in Spreadsheet** | ❌ TODO | Google OAuth + poll/watch |
+| **New File in Drive**      | ❌ TODO | Google Drive push |
+
+Coming-soon triggers appear greys out in the picker.
 
 ---
 
 ## Actions
 
-| Action                     | Status  | Implementation Notes              |
-| -------------------------- | ------- | --------------------------------- |
-| **Send Email**             | ✅ Done | Uses Resend API                   |
-| **HTTP Request**           | ✅ Done | Fetch with any method             |
-| **Send Discord Message**   | ✅ Done | Discord webhooks                  |
-| **Send Slack Message**     | ⚠️ Demo | Needs Slack webhook URL from user |
-| **Send SMS**               | ❌ TODO | Needs Twilio integration          |
-| **Create Spreadsheet Row** | ❌ TODO | Needs Google Sheets API + OAuth   |
-| **Create Notion Page**     | ❌ TODO | Needs Notion API integration      |
-| **Create Trello Card**     | ❌ TODO | Needs Trello API integration      |
+| Action                     | Status  | Notes |
+| -------------------------- | ------- | ----- |
+| **Send Email**             | ✅ Done | Resend (demo without key) |
+| **HTTP Request**           | ✅ Done | Any method |
+| **Send Discord Message**   | ✅ Done | User webhook URL |
+| **Send Slack Message**     | ✅ Done | User webhook URL |
+| **Filter Condition**       | ✅ Done | Stops pipeline (not a failure) |
+| **Delay**                  | ✅ Done | Max 15s (serverless cap) |
+| **Log Message**            | ✅ Done | Server logs + demo |
+| **Set Variable**           | ✅ Done | `{{vars.name}}` in later steps |
+| **Create Spreadsheet Row** | ⚠️      | Google OAuth |
+| **Create Notion Page**     | ⚠️      | `NOTION_API_KEY` |
+| **Create Trello Card**     | ⚠️      | Trello keys |
+| **Send SMS**               | ❌ TODO | Twilio |
 
 ---
 
-## Future Features
+## Platform
 
-### High Priority
+### Done
 
-- [ ] Zap enable/disable toggle
-- [ ] Zap run history UI (list past executions)
-- [ ] Zap editing (currently create-only)
-- [ ] Error notifications to user
+- [x] Enable/disable, edit, run history
+- [x] Variable substitution `{{field}}` / `{{trigger.x}}` / `{{vars.x}}`
+- [x] Optional `WORKER_SECRET`, webhook HMAC
+- [x] Starter templates (incl. GitHub, RSS, filter)
+- [x] Test run + expandable trigger payload in history
 
-### Medium Priority
+### Next (optional / needs keys)
 
-- [ ] OAuth flow for Google, Slack, Notion, Trello
-- [ ] Variable substitution in actions (use trigger data in email body)
-- [ ] Multiple zap runs pagination
-- [ ] Rate limiting per user
-
-### Low Priority
-
-- [ ] Template zaps (pre-built workflows)
-- [ ] Zap sharing/marketplace
-- [ ] Team/organization support
-- [ ] Audit logs
+- [ ] Google token refresh
+- [ ] Error notification email on failed runs
+- [ ] Real Twilio / inbound email
+- [ ] Timezone → UTC cron conversion
 
 ---
 
-## Third-Party Integrations Needed
+## Reseed after pull
 
-| Service       | API/SDK       | Auth Method              |
-| ------------- | ------------- | ------------------------ |
-| Google Sheets | `googleapis`  | OAuth 2.0                |
-| Google Drive  | `googleapis`  | OAuth 2.0                |
-| Slack         | Slack Web API | OAuth 2.0 or Webhook URL |
-| Twilio        | `twilio`      | API Key                  |
-| Notion        | Notion API    | API Key                  |
-| Trello        | Trello API    | API Key                  |
+```bash
+cd packages/db && bun run seed   # or: bunx tsx seed.ts
+```
+
+New catalog rows: Manual, RSS Feed, Filter Condition, Delay, Log Message, Set Variable.

@@ -92,6 +92,16 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRun = async (zapId: string, payload?: Record<string, unknown>) => {
+    try {
+      const res = await api.runZap(zapId, payload);
+      toast.success(res.message || "Test run started — check Run History");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Test run failed");
+      throw error;
+    }
+  };
+
   return (
     <div ref={containerRef} className="min-h-[calc(100vh-64px)] p-4 md:p-8">
       <div className="container mx-auto max-w-screen-xl">
@@ -157,7 +167,13 @@ export default function DashboardPage() {
         {!isLoading && zaps.length > 0 && (
           <div ref={cardsRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
             {zaps.map((zap) => (
-              <ZapCard key={zap.id} zap={zap} onDelete={handleDelete} onToggle={handleToggle} />
+              <ZapCard
+                key={zap.id}
+                zap={zap}
+                onDelete={handleDelete}
+                onToggle={handleToggle}
+                onRun={handleRun}
+              />
             ))}
           </div>
         )}

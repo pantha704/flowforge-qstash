@@ -11,14 +11,25 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Clock, CheckCircle, XCircle, Loader2, AlertCircle } from "lucide-react";
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  Braces,
+} from "lucide-react";
 
 interface Run {
   id: string;
   zapId: string;
   zapName: string;
+  triggerName?: string | null;
   status: string;
   error: string | null;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   completedAt: string | null;
 }
@@ -27,6 +38,7 @@ export function RunHistory() {
   const [isOpen, setIsOpen] = useState(false);
   const [runs, setRuns] = useState<Run[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -91,6 +103,10 @@ export function RunHistory() {
     }
   };
 
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -115,44 +131,84 @@ export function RunHistory() {
             <div className="text-center py-12 text-muted-foreground">
               <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No runs yet</p>
-              <p className="text-sm">Trigger a webhook to see run history</p>
+              <p className="text-sm">
+                Trigger a webhook, form, RSS item, or use Test run
+              </p>
             </div>
           ) : (
-            runs.map((run) => (
-              <div
-                key={run.id}
-                className="p-4 rounded-lg bg-card border border-border/50 hover:border-border transition-colors"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(run.status)}
-                    <span className="font-medium text-sm">{run.zapName}</span>
+            runs.map((run) => {
+              const open = !!expanded[run.id];
+              const hasPayload =
+                run.metadata && Object.keys(run.metadata).length > 0;
+              return (
+                <div
+                  key={run.id}
+                  className="p-4 rounded-lg bg-card border border-border/50 hover:border-border transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {getStatusIcon(run.status)}
+                      <span className="font-medium text-sm truncate">
+                        {run.zapName}
+                      </span>
+                    </div>
+                    <span className={getStatusBadge(run.status)}>
+                      {run.status}
+                    </span>
                   </div>
-                  <span className={getStatusBadge(run.status)}>
-                    {run.status}
-                  </span>
-                </div>
 
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Started:</span>
-                    <span>{formatDate(run.createdAt)}</span>
-                  </div>
-                  {run.completedAt && (
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    {run.triggerName && (
+                      <div className="flex justify-between gap-2">
+                        <span>Trigger:</span>
+                        <span className="truncate">{run.triggerName}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
-                      <span>Completed:</span>
-                      <span>{formatDate(run.completedAt)}</span>
+                      <span>Started:</span>
+                      <span>{formatDate(run.createdAt)}</span>
+                    </div>
+                    {run.completedAt && (
+                      <div className="flex justify-between">
+                        <span>Completed:</span>
+                        <span>{formatDate(run.completedAt)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {run.error && (
+                    <div className="mt-2 p-2 rounded bg-red-500/10 border border-red-500/20">
+                      <p className="text-xs text-red-500 font-mono break-all">
+                        {run.error}
+                      </p>
+                    </div>
+                  )}
+
+                  {hasPayload && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(run.id)}
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        {open ? (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        )}
+                        <Braces className="w-3.5 h-3.5" />
+                        Trigger payload
+                      </button>
+                      {open && (
+                        <pre className="mt-2 p-2 rounded bg-muted/50 text-[10px] font-mono overflow-x-auto max-h-40 overflow-y-auto text-muted-foreground">
+                          {JSON.stringify(run.metadata, null, 2)}
+                        </pre>
+                      )}
                     </div>
                   )}
                 </div>
-
-                {run.error && (
-                  <div className="mt-2 p-2 rounded bg-red-500/10 border border-red-500/20">
-                    <p className="text-xs text-red-500 font-mono">{run.error}</p>
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </SheetContent>

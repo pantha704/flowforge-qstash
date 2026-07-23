@@ -12,6 +12,10 @@ export interface User {
 export interface AvailableTrigger {
   id: string;
   name: string;
+  /** Fully implemented end-to-end (from API) */
+  ready?: boolean;
+  /** Alias for !ready when API provides it */
+  comingSoon?: boolean;
 }
 
 export interface AvailableAction {

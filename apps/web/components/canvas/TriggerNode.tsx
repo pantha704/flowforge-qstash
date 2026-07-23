@@ -57,10 +57,45 @@ export function TriggerNode() {
   };
 
   const handleSelectTrigger = (trigger: AvailableTrigger) => {
+    // Prefer API flag; fall back to known-ready list if older API
+    const ready =
+      trigger.ready === true ||
+      (trigger.ready === undefined &&
+        trigger.comingSoon !== true &&
+        [
+          "Webhook",
+          "Schedule (Cron)",
+          "Manual",
+          "New Form Submission",
+          "RSS Feed",
+        ].includes(trigger.name));
+    if (!ready) {
+      return; // coming soon — not selectable
+    }
     setTrigger(trigger);
-    setTriggerMetadata({}); // Reset metadata when changing trigger
+    if (trigger.name === "New Form Submission") {
+      setTriggerMetadata({ fields: "name,email,message", title: "Contact form" });
+    } else if (trigger.name === "RSS Feed") {
+      setTriggerMetadata({ feedUrl: "", pollCron: "*/30 * * * *" });
+    } else if (trigger.name === "Manual") {
+      setTriggerMetadata({ samplePayload: '{"message":"manual test"}' });
+    } else {
+      setTriggerMetadata({});
+    }
     setIsOpen(false);
   };
+
+  const isReady = (t: AvailableTrigger) =>
+    t.ready === true ||
+    (t.ready === undefined &&
+      t.comingSoon !== true &&
+      [
+        "Webhook",
+        "Schedule (Cron)",
+        "Manual",
+        "New Form Submission",
+        "RSS Feed",
+      ].includes(t.name));
 
   const filteredTriggers = triggers.filter((t) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -136,18 +171,31 @@ export function TriggerNode() {
               filteredTriggers.map((trigger) => {
                 const style = getTriggerStyle(trigger.name);
                 const Icon = style.icon;
+                const ready = isReady(trigger);
                 return (
                   <button
                     key={trigger.id}
                     type="button"
-                    className={`w-full text-left py-4 px-4 rounded-lg hover:${style.bg} transition-colors cursor-pointer border-0 bg-transparent`}
+                    disabled={!ready}
+                    className={`w-full text-left py-4 px-4 rounded-lg transition-colors border-0 bg-transparent ${
+                      ready
+                        ? `hover:${style.bg} cursor-pointer`
+                        : "opacity-50 cursor-not-allowed"
+                    }`}
                     onClick={() => handleSelectTrigger(trigger)}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.bg} ${style.text} shrink-0`}>
                         <Icon className="h-6 w-6" />
                       </div>
-                      <span className="font-medium text-base text-foreground">{trigger.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-base text-foreground">{trigger.name}</span>
+                        {!ready && (
+                          <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
+                            Coming soon
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 );

@@ -286,7 +286,7 @@ function WebhookForm({ metadata, onChange }: { metadata: Record<string, unknown>
         </p>
       </div>
 
-      {/* Optional: Webhook Secret */}
+      {/* Optional: Webhook Secret — only verified when set */}
       <div className="space-y-1.5">
         <Label className="text-sm text-muted-foreground">Webhook Secret (optional)</Label>
         <Input
@@ -296,9 +296,118 @@ function WebhookForm({ metadata, onChange }: { metadata: Record<string, unknown>
           className="bg-background/50 font-mono text-sm"
         />
         <p className="text-xs text-muted-foreground">
-          Used to verify webhook signatures (HMAC-SHA256)
+          When set, callers must send HMAC-SHA256 of the raw body in{" "}
+          <code className="text-[10px]">x-flowforge-signature</code> (hex or{" "}
+          <code className="text-[10px]">sha256=&lt;hex&gt;</code>). Leave empty to keep open.
         </p>
       </div>
+    </div>
+  );
+}
+
+// Public form trigger (Tier B)
+function FormSubmissionForm({
+  metadata,
+  onChange,
+}: {
+  metadata: Record<string, unknown>;
+  onChange: (m: Record<string, unknown>) => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const formUrl = (metadata.formUrl as string) || "";
+
+  const handleCopy = async () => {
+    if (!formUrl) return;
+    await navigator.clipboard.writeText(formUrl);
+    setCopied(true);
+    toast.success("Form URL copied!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label className="text-sm text-muted-foreground">Public form URL</Label>
+        <div className="flex gap-2">
+          <Input
+            value={formUrl || "Save the Zap to generate URL"}
+            readOnly
+            className="bg-background/50 font-mono text-sm flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleCopy}
+            disabled={!formUrl}
+            className="shrink-0"
+          >
+            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Share this link. Submissions POST JSON field values into your Zap as the trigger payload.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm text-muted-foreground">Form title</Label>
+        <Input
+          placeholder="Contact me"
+          value={(metadata.title as string) || ""}
+          onChange={(e) => onChange({ ...metadata, title: e.target.value })}
+          className="bg-background/50"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm text-muted-foreground">Description (optional)</Label>
+        <Textarea
+          placeholder="Tell me what you need..."
+          value={(metadata.description as string) || ""}
+          onChange={(e) => onChange({ ...metadata, description: e.target.value })}
+          className="bg-background/50 min-h-16"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm text-muted-foreground">Fields (comma-separated)</Label>
+        <Input
+          placeholder="name,email,message"
+          value={(metadata.fields as string) || "name,email,message"}
+          onChange={(e) => onChange({ ...metadata, fields: e.target.value })}
+          className="bg-background/50 font-mono text-sm"
+        />
+        <p className="text-xs text-muted-foreground">
+          Use these names in actions with templates, e.g.{" "}
+          <code className="text-[10px]">{"{{email}}"}</code> or{" "}
+          <code className="text-[10px]">{"{{message}}"}</code>
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm text-muted-foreground">Success message</Label>
+        <Input
+          placeholder="Thanks! Your response was submitted."
+          value={(metadata.successMessage as string) || ""}
+          onChange={(e) => onChange({ ...metadata, successMessage: e.target.value })}
+          className="bg-background/50"
+        />
+      </div>
+
+      {formUrl && (
+        <div className="space-y-1.5">
+          <Label className="text-sm text-muted-foreground">Embed snippet</Label>
+          <Textarea
+            readOnly
+            className="bg-background/50 font-mono text-[11px] min-h-16"
+            value={`<iframe src="${formUrl}" title="FlowForge form" style="width:100%;min-height:480px;border:0;border-radius:12px"></iframe>`}
+          />
+          <p className="text-xs text-muted-foreground">
+            Spam honeypot is built into the hosted form page automatically.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -306,7 +415,7 @@ function WebhookForm({ metadata, onChange }: { metadata: Record<string, unknown>
 // Define form fields for each trigger/action type
 const actionFields: Record<string, Array<{ key: string; label: string; type: "text" | "email" | "url" | "textarea"; placeholder: string }>> = {
   "Send Email": [
-    { key: "to", label: "To Email", type: "email", placeholder: "recipient@example.com" },
+    { key: "to", label: "To Email", type: "email", placeholder: "recipient@example.com or {{email}}" },
     { key: "subject", label: "Subject", type: "text", placeholder: "Email subject line" },
     { key: "body", label: "Body", type: "textarea", placeholder: "Email body content..." },
   ],
@@ -343,6 +452,26 @@ const actionFields: Record<string, Array<{ key: string; label: string; type: "te
     { key: "title", label: "Card Title", type: "text", placeholder: "New card title" },
     { key: "description", label: "Description", type: "textarea", placeholder: "Card description..." },
   ],
+  "Filter Condition": [
+    { key: "left", label: "Left value", type: "text", placeholder: "{{status}} or literal" },
+    {
+      key: "operator",
+      label: "Operator",
+      type: "text",
+      placeholder: "equals | not_equals | contains | not_contains | exists | gt | lt",
+    },
+    { key: "right", label: "Right value", type: "text", placeholder: "paid (ignored for exists)" },
+  ],
+  "Delay": [
+    { key: "seconds", label: "Seconds (max 15)", type: "text", placeholder: "2" },
+  ],
+  "Log Message": [
+    { key: "message", label: "Message", type: "textarea", placeholder: "Got event: {{message}}" },
+  ],
+  "Set Variable": [
+    { key: "key", label: "Variable name", type: "text", placeholder: "fullName" },
+    { key: "value", label: "Value", type: "text", placeholder: "{{name}} / static text" },
+  ],
 };
 
 export function MetadataForm({ type, name, metadata, onChange }: MetadataFormProps) {
@@ -353,6 +482,65 @@ export function MetadataForm({ type, name, metadata, onChange }: MetadataFormPro
     }
     if (name === "Webhook") {
       return <WebhookForm metadata={metadata} onChange={onChange} />;
+    }
+    if (name === "New Form Submission") {
+      return <FormSubmissionForm metadata={metadata} onChange={onChange} />;
+    }
+    if (name === "Manual") {
+      return (
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            This zap only runs when you click <strong className="text-foreground">Run</strong> on
+            the dashboard (or call <code className="text-[10px]">POST /api/zap/:id/run</code>).
+          </p>
+          <p className="text-xs">
+            Optional default test payload (JSON merged into the run):
+          </p>
+          <Textarea
+            placeholder='{"message":"hello from manual run"}'
+            value={
+              metadata.samplePayload
+                ? typeof metadata.samplePayload === "string"
+                  ? (metadata.samplePayload as string)
+                  : JSON.stringify(metadata.samplePayload, null, 2)
+                : ""
+            }
+            onChange={(e) => onChange({ ...metadata, samplePayload: e.target.value })}
+            className="bg-background/50 font-mono text-sm min-h-20"
+          />
+        </div>
+      );
+    }
+    if (name === "RSS Feed") {
+      return (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-sm text-muted-foreground">Feed URL</Label>
+            <Input
+              placeholder="https://hnrss.org/frontpage"
+              value={(metadata.feedUrl as string) || ""}
+              onChange={(e) => onChange({ ...metadata, feedUrl: e.target.value })}
+              className="bg-background/50 font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Public RSS / Atom / JSON Feed. First poll only baselines (no spam); later new items
+              fire the zap. Templates: <code className="text-[10px]">{"{{title}}"}</code>,{" "}
+              <code className="text-[10px]">{"{{link}}"}</code>,{" "}
+              <code className="text-[10px]">{"{{description}}"}</code>
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm text-muted-foreground">Poll cron (UTC)</Label>
+            <Input
+              placeholder="*/30 * * * *"
+              value={(metadata.pollCron as string) || "*/30 * * * *"}
+              onChange={(e) => onChange({ ...metadata, pollCron: e.target.value })}
+              className="bg-background/50 font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">Default: every 30 minutes via QStash.</p>
+          </div>
+        </div>
+      );
     }
     // Generic trigger form
     return (
@@ -395,6 +583,9 @@ export function MetadataForm({ type, name, metadata, onChange }: MetadataFormPro
           }}
           className="bg-background/50 font-mono text-sm min-h-20"
         />
+        <p className="text-xs text-muted-foreground">
+          Tip: use <code className="text-[10px]">{"{{field}}"}</code> to inject trigger data.
+        </p>
       </div>
     );
   }
@@ -405,6 +596,12 @@ export function MetadataForm({ type, name, metadata, onChange }: MetadataFormPro
 
   return (
     <div className="space-y-4">
+      <p className="text-xs text-muted-foreground rounded-md bg-muted/40 px-2 py-1.5">
+        Templates: use <code className="text-[10px]">{"{{email}}"}</code>,{" "}
+        <code className="text-[10px]">{"{{trigger.message}}"}</code>, or nested paths like{" "}
+        <code className="text-[10px]">{"{{user.name}}"}</code> from the trigger payload.
+        Missing keys become empty strings.
+      </p>
       {fields.map((field) => (
         <div key={field.key} className="space-y-1.5">
           <Label htmlFor={field.key} className="text-sm text-muted-foreground">
@@ -413,7 +610,7 @@ export function MetadataForm({ type, name, metadata, onChange }: MetadataFormPro
           {field.type === "textarea" ? (
             <Textarea
               id={field.key}
-              placeholder={field.placeholder}
+              placeholder={`${field.placeholder} (supports {{templates}})`}
               value={(metadata[field.key] as string) || ""}
               onChange={(e) => handleFieldChange(field.key, e.target.value)}
               className="bg-background/50 min-h-20"
@@ -422,7 +619,7 @@ export function MetadataForm({ type, name, metadata, onChange }: MetadataFormPro
             <Input
               id={field.key}
               type={field.type}
-              placeholder={field.placeholder}
+              placeholder={`${field.placeholder} ({{templates}} ok)`}
               value={(metadata[field.key] as string) || ""}
               onChange={(e) => handleFieldChange(field.key, e.target.value)}
               className="bg-background/50"

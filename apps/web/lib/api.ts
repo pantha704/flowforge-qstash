@@ -162,6 +162,17 @@ class ApiClient {
     });
   }
 
+  /** Manual / test fire for a zap */
+  async runZap(
+    id: string,
+    payload?: Record<string, unknown>
+  ): Promise<{ success: boolean; zapRunId: string; message?: string }> {
+    return this.request(`/zap/${id}/run`, {
+      method: "POST",
+      body: JSON.stringify({ payload: payload || {} }),
+    });
+  }
+
   // Run history
   async getRuns(userId: number, limit = 50): Promise<{
     success: boolean;
@@ -169,6 +180,7 @@ class ApiClient {
       id: string;
       zapId: string;
       zapName: string;
+      triggerName?: string | null;
       status: string;
       error: string | null;
       metadata: Record<string, unknown>;

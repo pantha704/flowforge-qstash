@@ -9,8 +9,10 @@ async function main() {
   const triggers = [
     "Webhook",
     "Schedule (Cron)",
-    "New Email Received",
+    "Manual",
     "New Form Submission",
+    "RSS Feed",
+    "New Email Received",
     "New Row in Spreadsheet",
     "New File in Drive",
   ];
@@ -34,6 +36,11 @@ async function main() {
     "Send SMS",
     "HTTP Request",
     "Create Trello Card",
+    // No third-party keys required:
+    "Filter Condition",
+    "Delay",
+    "Log Message",
+    "Set Variable",
   ];
 
   for (const name of actions) {

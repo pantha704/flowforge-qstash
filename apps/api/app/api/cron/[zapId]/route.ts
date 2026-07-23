@@ -1,6 +1,7 @@
 import { prismaClient } from "@repo/db";
 import { NextRequest, NextResponse } from "next/server";
 import { Client } from "@upstash/qstash";
+import { enqueueWorker } from "../../../../lib/enqueue-worker";
 
 // Initialize QStash client
 const qstash = new Client({
@@ -37,7 +38,7 @@ export async function POST(
       return NextResponse.json({ error: "Zap not found" }, { status: 404 });
     }
 
-    // ponytail: skip inactive zaps, no need to fan-out work for paused zaps
+    // Skip inactive zaps
     if (!zap.isActive) {
       console.log(`   ⏸️ Zap is inactive, skipping`);
       return NextResponse.json({ success: false, message: "Zap is inactive" });
@@ -58,7 +59,7 @@ export async function POST(
       }
       return NextResponse.json({
         success: false,
-        message: "Run limit reached, schedule cancelled"
+        message: "Run limit reached, schedule cancelled",
       });
     }
 
@@ -73,15 +74,12 @@ export async function POST(
 
     console.log(`   📝 Created ZapRun: ${zapRun.id}`);
 
-    // ponytail: call worker directly instead of QStash double-hop (saves rate limit)
-    const appUrl = process.env.APP_URL || "http://localhost:3001";
-    await fetch(`${appUrl}/api/worker`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ zapRunId: zapRun.id, stage: 0 }),
-    });
-
-    console.log(`   ✅ Triggered worker`);
+    const worker = await enqueueWorker(zapRun.id);
+    if (!worker.ok) {
+      console.warn(`   ⚠️ Worker non-OK: ${worker.status ?? "network error"}`);
+    } else {
+      console.log(`   ✅ Triggered worker`);
+    }
 
     return NextResponse.json({ success: true, zapRunId: zapRun.id });
   } catch (error) {

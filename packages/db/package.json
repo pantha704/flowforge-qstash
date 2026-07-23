@@ -6,7 +6,8 @@
   "scripts": {
     "build": "echo 'No build needed - source used directly'",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "seed": "bun seed.ts"
   },
   "devDependencies": {
     "prisma": "5.22.0",

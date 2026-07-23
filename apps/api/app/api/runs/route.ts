@@ -35,7 +35,11 @@ export async function GET(req: NextRequest) {
     const formattedRuns = runs.map((run) => ({
       id: run.id,
       zapId: run.zapId,
-      zapName: run.zap.trigger?.type.name || "Unknown Trigger",
+      zapName:
+        run.zap.name ||
+        run.zap.trigger?.type.name ||
+        "Unknown Zap",
+      triggerName: run.zap.trigger?.type.name || null,
       status: run.status,
       error: run.error,
       metadata: run.metadata,

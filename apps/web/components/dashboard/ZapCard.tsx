@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import {
   ArrowRight, Trash2, Zap as ZapIcon, Copy, Check, Clock, Webhook, Calendar,
-  Mail, FileSpreadsheet, FolderOpen, FileText, Globe, Trello, Phone, Infinity, Pencil
+  Mail, FileSpreadsheet, FolderOpen, FileText, Globe, Trello, Phone, Infinity, Pencil,
+  Play, Rss, Filter, Timer, ScrollText, Variable, Loader2
 } from "lucide-react";
 import { SlackIcon, DiscordIcon, NotionIcon } from "@/components/icons";
 import { toast } from "sonner";
@@ -18,8 +19,10 @@ import type { Zap } from "@/lib/types";
 const ICON_ANIMATIONS: Record<string, string> = {
   "Webhook": "animate-icon-rotate",
   "Schedule (Cron)": "animate-icon-clock",
+  "Manual": "animate-icon-zap",
   "New Email Received": "animate-icon-mail",
   "New Form Submission": "animate-icon-file",
+  "RSS Feed": "animate-icon-zap",
   "New Row in Spreadsheet": "animate-icon-file",
   "New File in Drive": "animate-icon-folder",
   "Send Email": "animate-icon-mail",
@@ -30,20 +33,27 @@ const ICON_ANIMATIONS: Record<string, string> = {
   "Send SMS": "animate-icon-phone",
   "HTTP Request": "animate-icon-globe",
   "Create Trello Card": "animate-icon-trello",
+  "Filter Condition": "animate-icon-zap",
+  "Delay": "animate-icon-clock",
+  "Log Message": "animate-icon-zap",
+  "Set Variable": "animate-icon-zap",
 };
 
 interface ZapCardProps {
   zap: Zap;
   onDelete: (id: string) => void;
   onToggle?: (id: string, isActive: boolean) => Promise<void>;
+  onRun?: (id: string, payload?: Record<string, unknown>) => Promise<void>;
 }
 
 // Color and icon mapping for triggers
 const TRIGGER_STYLES: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
   "Webhook": { bg: "bg-blue-500/20", text: "text-blue-500", icon: Webhook },
   "Schedule (Cron)": { bg: "bg-purple-500/20", text: "text-purple-500", icon: Clock },
+  "Manual": { bg: "bg-orange-500/20", text: "text-orange-500", icon: Play },
   "New Email Received": { bg: "bg-red-500/20", text: "text-red-500", icon: Mail },
   "New Form Submission": { bg: "bg-green-500/20", text: "text-green-500", icon: FileText },
+  "RSS Feed": { bg: "bg-amber-500/20", text: "text-amber-500", icon: Rss },
   "New Row in Spreadsheet": { bg: "bg-emerald-500/20", text: "text-emerald-500", icon: FileSpreadsheet },
   "New File in Drive": { bg: "bg-yellow-500/20", text: "text-yellow-500", icon: FolderOpen },
 };
@@ -58,16 +68,21 @@ const ACTION_STYLES: Record<string, { bg: string; text: string; icon: React.Elem
   "Send SMS": { bg: "bg-green-500/20", text: "text-green-500", icon: Phone },
   "HTTP Request": { bg: "bg-cyan-500/20", text: "text-cyan-500", icon: Globe },
   "Create Trello Card": { bg: "bg-blue-500/20", text: "text-blue-500", icon: Trello },
+  "Filter Condition": { bg: "bg-fuchsia-500/20", text: "text-fuchsia-400", icon: Filter },
+  "Delay": { bg: "bg-slate-500/20", text: "text-slate-300", icon: Timer },
+  "Log Message": { bg: "bg-lime-500/20", text: "text-lime-400", icon: ScrollText },
+  "Set Variable": { bg: "bg-indigo-500/20", text: "text-indigo-300", icon: Variable },
 };
 
 // Default style for unknown types
 const DEFAULT_STYLE = { bg: "bg-primary/20", text: "text-primary", icon: ZapIcon };
 
-export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
+export function ZapCard({ zap, onDelete, onToggle, onRun }: ZapCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [isActive, setIsActive] = useState(zap.isActive ?? true);
   const [isToggling, setIsToggling] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   const handleMouseEnter = () => {
     if (cardRef.current) {
@@ -96,10 +111,19 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
   const actions = zap.actions || [];
   const isWebhookTrigger = triggerName === "Webhook";
   const isScheduleTrigger = triggerName === "Schedule (Cron)";
+  const isFormTrigger = triggerName === "New Form Submission";
+  const isRssTrigger = triggerName === "RSS Feed";
+  const isManualTrigger = triggerName === "Manual";
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
   // Construct webhook URL
   const webhookUrl = isWebhookTrigger
-    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/hooks/${zap.userId}/${zap.id}`
+    ? `${apiBase}/hooks/${zap.userId}/${zap.id}`
+    : null;
+
+  const formUrl = isFormTrigger
+    ? `${apiBase}/forms/${zap.userId}/${zap.id}`
     : null;
 
   // Get schedule info from trigger metadata
@@ -139,12 +163,12 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
 
   const cronParsed = scheduleInfo?.cronExpression ? parseCronToHuman(scheduleInfo.cronExpression) : null;
 
-  const handleCopyUrl = async (e: React.MouseEvent) => {
+  const handleCopyUrl = async (e: React.MouseEvent, url: string | null, label: string) => {
     e.stopPropagation();
-    if (webhookUrl) {
-      await navigator.clipboard.writeText(webhookUrl);
+    if (url) {
+      await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Webhook URL copied!");
+      toast.success(`${label} copied!`);
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -157,6 +181,26 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
       setIsActive(checked);
     } finally {
       setIsToggling(false);
+    }
+  };
+
+  const handleRun = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onRun || isRunning) return;
+    setIsRunning(true);
+    try {
+      let payload: Record<string, unknown> | undefined;
+      const sample = (zap.trigger?.payload as { samplePayload?: string })?.samplePayload;
+      if (sample && typeof sample === "string" && sample.trim()) {
+        try {
+          payload = JSON.parse(sample) as Record<string, unknown>;
+        } catch {
+          payload = { message: sample };
+        }
+      }
+      await onRun(zap.id, payload);
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -309,7 +353,26 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleCopyUrl}
+              onClick={(e) => handleCopyUrl(e, webhookUrl, "Webhook URL")}
+              className="h-7 w-7 p-0 shrink-0"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Public form URL */}
+      {isFormTrigger && formUrl && (
+        <div className="mb-3 p-2 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between gap-2">
+            <code className="text-xs text-muted-foreground truncate flex-1" title={formUrl}>
+              {formUrl}
+            </code>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => handleCopyUrl(e, formUrl, "Form URL")}
               className="h-7 w-7 p-0 shrink-0"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -345,6 +408,27 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
           )}
         </div>
       )}
+
+      {isRssTrigger && (
+        <div className="mb-3 p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 mb-1 text-foreground font-medium">
+            <Rss className="w-3 h-3" />
+            RSS poll
+          </div>
+          <code className="block truncate" title={String((zap.trigger?.payload as { feedUrl?: string })?.feedUrl || "")}>
+            {(zap.trigger?.payload as { feedUrl?: string })?.feedUrl || "No feed URL"}
+          </code>
+          <span className="text-[10px]">
+            cron: {(zap.trigger?.payload as { pollCron?: string })?.pollCron || "*/30 * * * *"}
+          </span>
+        </div>
+      )}
+
+      {isManualTrigger && (
+        <div className="mb-3 p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground">
+          Use the <strong className="text-foreground">Run</strong> button to fire this zap with a test payload.
+        </div>
+      )}
       </div>
 
       {/* Footer */}
@@ -362,6 +446,22 @@ export function ZapCard({ zap, onDelete, onToggle }: ZapCardProps) {
           )}
         </div>
         <div className="flex items-center gap-1">
+          {onRun && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRun}
+              disabled={isRunning || !isActive}
+              className="text-muted-foreground hover:text-primary h-8 w-8 p-0"
+              title={isActive ? "Test run" : "Enable zap to run"}
+            >
+              {isRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"

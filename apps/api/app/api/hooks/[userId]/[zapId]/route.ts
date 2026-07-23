@@ -1,5 +1,7 @@
 import { prismaClient } from "@repo/db";
 import { NextRequest, NextResponse } from "next/server";
+import { assertWebhookSignature } from "../../../../../lib/security";
+import { enqueueWorker } from "../../../../../lib/enqueue-worker";
 
 export async function POST(
   req: NextRequest,
@@ -9,15 +11,17 @@ export async function POST(
 
   console.log(`[Hook] Received webhook for user ${userId}, zap ${zapId}`);
 
-  // Parse body - handle empty or invalid JSON
-  let body = {};
+  // Parse body - handle empty or invalid JSON (keep raw text for HMAC)
+  let rawText = "";
+  let body: Record<string, unknown> = {};
   try {
-    const text = await req.text();
-    if (text) {
-      body = JSON.parse(text);
+    rawText = await req.text();
+    if (rawText) {
+      body = JSON.parse(rawText);
     }
-  } catch (e) {
+  } catch {
     console.log("[Hook] No JSON body or invalid JSON, using empty object");
+    body = {};
   }
 
   try {
@@ -26,7 +30,8 @@ export async function POST(
       where: { id: zapId },
       include: {
         actions: true,
-        _count: { select: { ZapRuns: true } }
+        trigger: true,
+        _count: { select: { ZapRuns: true } },
       },
     });
 
@@ -38,13 +43,24 @@ export async function POST(
       );
     }
 
-    if (zap.userId !== parseInt(userId)) {
+    if (zap.userId !== parseInt(userId, 10)) {
       console.error(`[Hook] User mismatch: expected ${zap.userId}, got ${userId}`);
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 403 }
       );
     }
+
+    // Optional HMAC: only when user configured webhookSecret on the trigger
+    const triggerPayload = (zap.trigger?.payload || {}) as {
+      webhookSecret?: string;
+    };
+    const sigError = assertWebhookSignature(
+      rawText,
+      triggerPayload.webhookSecret,
+      req
+    );
+    if (sigError) return sigError;
 
     // Check if zap is disabled
     if (!zap.isActive) {
@@ -64,7 +80,7 @@ export async function POST(
           success: false,
           error: "Run limit reached",
           runCount,
-          maxRuns: zap.maxRuns
+          maxRuns: zap.maxRuns,
         },
         { status: 429 }
       );
@@ -74,22 +90,23 @@ export async function POST(
     const zapRun = await prismaClient.zapRun.create({
       data: {
         zapId,
-        metadata: body,
+        // Prisma Json input accepts plain objects; cast keeps TS happy
+        metadata: body as object,
         status: "pending",
       },
     });
 
-    console.log(`[Hook] ZapRun created: ${zapRun.id} (${runCount + 1}/${zap.maxRuns === -1 ? '∞' : zap.maxRuns})`);
+    console.log(
+      `[Hook] ZapRun created: ${zapRun.id} (${runCount + 1}/${zap.maxRuns === -1 ? "∞" : zap.maxRuns})`
+    );
 
-    // ponytail: call worker directly, same path local + prod (skips QStash rate-limit burn)
-    const appUrl = process.env.APP_URL || "http://localhost:3001";
-    await fetch(`${appUrl}/api/worker`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ zapRunId: zapRun.id }),
-    });
-
-    console.log(`[Hook] Worker triggered`);
+    // Direct worker call (opt-in WORKER_SECRET via enqueueWorker)
+    const worker = await enqueueWorker(zapRun.id);
+    if (!worker.ok) {
+      console.warn(`[Hook] Worker returned non-OK: ${worker.status ?? "network error"}`);
+    } else {
+      console.log(`[Hook] Worker triggered`);
+    }
 
     return NextResponse.json({
       success: true,
@@ -104,7 +121,7 @@ export async function POST(
       {
         success: false,
         error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

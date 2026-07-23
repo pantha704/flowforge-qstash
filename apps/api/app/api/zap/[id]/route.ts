@@ -2,6 +2,7 @@ import { prismaClient } from "@repo/db";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { Client } from "@upstash/qstash";
+import { getAppUrl } from "../../../../lib/app-url";
 
 // Initialize QStash client
 const qstash = new Client({
@@ -138,43 +139,48 @@ export async function PATCH(
       updateData.isActive = body.isActive;
     }
 
-    // Handle Schedule (Cron) triggers - pause/resume QStash schedule
-    const isScheduleTrigger = existingZap.trigger?.type?.name === "Schedule (Cron)";
+    // Pause/resume QStash for Schedule + RSS
+    const triggerName = existingZap.trigger?.type?.name;
+    const isScheduleTrigger = triggerName === "Schedule (Cron)";
+    const isRssTrigger = triggerName === "RSS Feed";
     const triggerPayload = existingZap.trigger?.payload as {
       scheduleId?: string;
       cronExpression?: string;
-      timezone?: string
+      pollCron?: string;
+      feedUrl?: string;
+      timezone?: string;
     } | null;
 
-    if (isScheduleTrigger && typeof body.isActive === "boolean") {
+    if ((isScheduleTrigger || isRssTrigger) && typeof body.isActive === "boolean") {
       if (!body.isActive && triggerPayload?.scheduleId) {
-        // PAUSING: Delete the QStash schedule
         try {
           await qstash.schedules.delete(triggerPayload.scheduleId);
           console.log(`⏸️ Paused schedule ${triggerPayload.scheduleId} for zap ${id}`);
         } catch (e) {
           console.error(`Failed to pause schedule ${triggerPayload.scheduleId}:`, e);
         }
-      } else if (body.isActive && triggerPayload?.cronExpression) {
-        // RESUMING: Re-create the QStash schedule
+      } else if (body.isActive) {
         try {
-          // Build the correct webhook URL
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL
-            || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-            || 'http://localhost:3001';
-          const webhookUrl = `${baseUrl}/api/cron/${id}`;
+          // Public URL for QStash callbacks (deployed APP_URL)
+          const appUrl =
+            process.env.APP_URL?.replace(/\/$/, "") || getAppUrl();
+          const cron =
+            (isRssTrigger
+              ? triggerPayload?.pollCron || triggerPayload?.cronExpression
+              : triggerPayload?.cronExpression) || "*/30 * * * *";
+          const destination = isRssTrigger
+            ? `${appUrl}/api/poll/rss/${id}`
+            : `${appUrl}/api/cron/${id}`;
 
-          console.log(`▶️ Creating schedule with URL: ${webhookUrl}`);
+          console.log(`▶️ Creating schedule with URL: ${destination}`);
 
           const schedule = await qstash.schedules.create({
-            destination: webhookUrl,
-            cron: triggerPayload.cronExpression,
-            body: JSON.stringify({ zapId: id, userId: existingZap.userId }),
+            destination,
+            cron,
           });
 
           console.log(`▶️ Resumed schedule ${schedule.scheduleId} for zap ${id}`);
 
-          // Update the trigger with new scheduleId
           if (existingZap.trigger) {
             await prismaClient.trigger.update({
               where: { id: existingZap.trigger.id },

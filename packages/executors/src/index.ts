@@ -7,6 +7,9 @@
 
 import { Resend } from 'resend';
 
+export { resolveTemplates } from './templates';
+export type { TemplateContext } from './templates';
+
 // Lazy initialization helper (avoid env var access at build time)
 let resendClient: Resend | null = null;
 function getResend() {
@@ -342,6 +345,102 @@ async function createTrelloCard(metadata: ActionMetadata): Promise<boolean> {
   }
 }
 
+/** Thrown by Filter Condition when the pipeline should stop (not a failure). */
+export const FILTER_STOP_CODE = "FILTER_STOP";
+
+export function isFilterStop(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.message === FILTER_STOP_CODE ||
+      (error as Error & { code?: string }).code === FILTER_STOP_CODE)
+  );
+}
+
+/**
+ * Filter Condition — stop remaining actions when left/right don't match.
+ * Metadata (after templates): left, operator, right
+ * Operators: equals | not_equals | contains | not_contains | exists | gt | lt
+ */
+async function filterCondition(metadata: ActionMetadata): Promise<boolean> {
+  const left = String(metadata.left ?? "");
+  const right = String(metadata.right ?? "");
+  const operator = String(metadata.operator || "equals").toLowerCase();
+
+  console.log(`🔀 [Filter Condition] ${JSON.stringify(left)} ${operator} ${JSON.stringify(right)}`);
+
+  let pass = false;
+  switch (operator) {
+    case "equals":
+    case "eq":
+      pass = left === right;
+      break;
+    case "not_equals":
+    case "neq":
+      pass = left !== right;
+      break;
+    case "contains":
+      pass = left.includes(right);
+      break;
+    case "not_contains":
+      pass = !left.includes(right);
+      break;
+    case "exists":
+      pass = left.trim().length > 0;
+      break;
+    case "gt":
+      pass = Number(left) > Number(right);
+      break;
+    case "lt":
+      pass = Number(left) < Number(right);
+      break;
+    default:
+      pass = left === right;
+  }
+
+  if (!pass) {
+    console.log(`   ⛔ Filter did not pass — stopping remaining actions`);
+    const err = new Error(FILTER_STOP_CODE) as Error & { code: string };
+    err.code = FILTER_STOP_CODE;
+    throw err;
+  }
+
+  console.log(`   ✅ Filter passed`);
+  return true;
+}
+
+/**
+ * Delay — sleep up to 15s (serverless-safe cap)
+ */
+async function delay(metadata: ActionMetadata): Promise<boolean> {
+  const raw = Number(metadata.seconds ?? metadata.ms ?? 1);
+  const seconds = Number.isFinite(raw)
+    ? Math.min(Math.max(raw, 0), 15)
+    : 1;
+  console.log(`⏱️ [Delay] waiting ${seconds}s (capped at 15)`);
+  await new Promise((r) => setTimeout(r, seconds * 1000));
+  return true;
+}
+
+/**
+ * Log Message — always succeeds; useful for demos/debug
+ */
+async function logMessage(metadata: ActionMetadata): Promise<boolean> {
+  const message = String(metadata.message ?? "");
+  console.log(`📝 [Log Message] ${message}`);
+  return true;
+}
+
+/**
+ * Set Variable — handled primarily in the worker (mutates run.vars).
+ * Executor is a no-op success so unknown-path tooling still works.
+ */
+async function setVariable(metadata: ActionMetadata): Promise<boolean> {
+  console.log(
+    `📦 [Set Variable] key=${String(metadata.key ?? "")} value=${String(metadata.value ?? "").slice(0, 80)}`
+  );
+  return true;
+}
+
 /**
  * Executor registry - maps action names to executor functions
  */
@@ -354,6 +453,10 @@ export const executors: Record<string, Executor> = {
   "Create Spreadsheet Row": createSpreadsheetRow,
   "Create Notion Page": createNotionPage,
   "Create Trello Card": createTrelloCard,
+  "Filter Condition": filterCondition,
+  "Delay": delay,
+  "Log Message": logMessage,
+  "Set Variable": setVariable,
 };
 
 /**
