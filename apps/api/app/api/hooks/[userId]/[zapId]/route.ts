@@ -1,8 +1,5 @@
-import { Client } from "@upstash/qstash";
 import { prismaClient } from "@repo/db";
 import { NextRequest, NextResponse } from "next/server";
-
-const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
 
 export async function POST(
   req: NextRequest,
@@ -84,39 +81,15 @@ export async function POST(
 
     console.log(`[Hook] ZapRun created: ${zapRun.id} (${runCount + 1}/${zap.maxRuns === -1 ? '∞' : zap.maxRuns})`);
 
-    // Check if we're in local dev mode (QStash can't call localhost)
-    const isLocalDev = process.env.APP_URL?.includes("localhost");
+    // ponytail: call worker directly, same path local + prod (skips QStash rate-limit burn)
+    const appUrl = process.env.APP_URL || "http://localhost:3001";
+    await fetch(`${appUrl}/api/worker`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zapRunId: zapRun.id }),
+    });
 
-    if (isLocalDev) {
-      // For local development: call worker directly
-      console.log(`[Hook] Local mode - calling worker directly`);
-      const workerResponse = await fetch(
-        `${process.env.APP_URL}/api/worker`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ zapRunId: zapRun.id }),
-        }
-      );
-      console.log(`[Hook] Worker response: ${workerResponse.status}`);
-    } else {
-      // For production: publish to QStash
-      console.log(`[Hook] Publishing to QStash for processing`);
-
-      if (!process.env.QSTASH_TOKEN) {
-        console.error("[Hook] QSTASH_TOKEN not configured");
-        return NextResponse.json(
-          { success: false, error: "QStash not configured" },
-          { status: 500 }
-        );
-      }
-
-      await qstash.publishJSON({
-        url: `${process.env.APP_URL}/api/worker`,
-        body: { zapRunId: zapRun.id },
-        retries: 3,
-      });
-    }
+    console.log(`[Hook] Worker triggered`);
 
     return NextResponse.json({
       success: true,
