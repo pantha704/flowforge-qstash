@@ -104,7 +104,14 @@ export function ButtonPair({ hasActions, onSave, canSave, isSaving }: ButtonPair
                 <Skeleton key={i} className="h-16 w-full rounded-lg" />
               ))
             ) : filteredActions.length > 0 ? (
-              filteredActions.map((action) => {
+              filteredActions
+                .slice()
+                .sort((a, b) => {
+                  const da = getActionStyle(a.name).disabled ? 1 : 0;
+                  const db = getActionStyle(b.name).disabled ? 1 : 0;
+                  return da - db;
+                })
+                .map((action) => {
                 const style = getActionStyle(action.name);
                 const Icon = style.icon;
                 const isDisabled = style.disabled;
@@ -112,20 +119,33 @@ export function ButtonPair({ hasActions, onSave, canSave, isSaving }: ButtonPair
                   <button
                     key={action.id}
                     type="button"
-                    className={`w-full text-left py-4 px-4 rounded-lg transition-colors border-0 bg-transparent ${
+                    className={`w-full text-left py-4 px-4 rounded-lg transition-colors border-0 ${
                       isDisabled
-                        ? 'opacity-50 cursor-not-allowed'
-                        : `hover:${style.bg} cursor-pointer`
+                        ? "bg-muted/30 opacity-55 cursor-not-allowed grayscale"
+                        : "bg-transparent hover:bg-cyan-500/10 cursor-pointer"
                     }`}
                     onClick={() => !isDisabled && handleSelectAction(action)}
                     disabled={isDisabled}
+                    aria-disabled={isDisabled}
+                    title={
+                      isDisabled
+                        ? style.disabledReason || "Not available"
+                        : action.name
+                    }
                   >
                     <div className="flex items-center gap-4">
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.bg} ${style.text} shrink-0`}>
                         <Icon className="h-6 w-6" />
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-base text-foreground">{action.name}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-base text-foreground">{action.name}</span>
+                          {isDisabled && (
+                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
+                              Unavailable
+                            </span>
+                          )}
+                        </div>
                         {style.disabledReason && (
                           <span className="text-xs text-muted-foreground">{style.disabledReason}</span>
                         )}

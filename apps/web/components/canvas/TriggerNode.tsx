@@ -14,8 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MetadataForm } from "./MetadataForm";
 import { api } from "@/lib/api";
 import { useZapBuilderStore } from "@/lib/store";
-import { getTriggerStyle } from "@/lib/type-styles";
-import { Search, ChevronRight } from "lucide-react";
+import { getTriggerStyle, isTriggerSelectable } from "@/lib/type-styles";
+import { Search, ChevronRight, Lock } from "lucide-react";
 import type { AvailableTrigger } from "@/lib/types";
 
 export function TriggerNode() {
@@ -57,20 +57,14 @@ export function TriggerNode() {
   };
 
   const handleSelectTrigger = (trigger: AvailableTrigger) => {
-    // Prefer API flag; fall back to known-ready list if older API
-    const ready =
-      trigger.ready === true ||
-      (trigger.ready === undefined &&
-        trigger.comingSoon !== true &&
-        [
-          "Webhook",
-          "Schedule (Cron)",
-          "Manual",
-          "New Form Submission",
-          "RSS Feed",
-        ].includes(trigger.name));
-    if (!ready) {
-      return; // coming soon — not selectable
+    if (
+      !isTriggerSelectable({
+        name: trigger.name,
+        ready: trigger.ready,
+        comingSoon: trigger.comingSoon,
+      })
+    ) {
+      return; // not wired / coming soon
     }
     setTrigger(trigger);
     if (trigger.name === "New Form Submission") {
@@ -86,20 +80,16 @@ export function TriggerNode() {
   };
 
   const isReady = (t: AvailableTrigger) =>
-    t.ready === true ||
-    (t.ready === undefined &&
-      t.comingSoon !== true &&
-      [
-        "Webhook",
-        "Schedule (Cron)",
-        "Manual",
-        "New Form Submission",
-        "RSS Feed",
-      ].includes(t.name));
+    isTriggerSelectable({
+      name: t.name,
+      ready: t.ready,
+      comingSoon: t.comingSoon,
+    });
 
-  const filteredTriggers = triggers.filter((t) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Ready first, then coming-soon; keep search
+  const filteredTriggers = triggers
+    .filter((t) => t.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => Number(isReady(b)) - Number(isReady(a)));
 
   // Get style for selected trigger
   const selectedStyle = selectedTrigger ? getTriggerStyle(selectedTrigger.name) : getTriggerStyle("");
@@ -172,27 +162,49 @@ export function TriggerNode() {
                 const style = getTriggerStyle(trigger.name);
                 const Icon = style.icon;
                 const ready = isReady(trigger);
+                const reason =
+                  trigger.disabledReason ||
+                  style.disabledReason ||
+                  (trigger.comingSoon ? "Coming soon — not set up yet" : undefined);
                 return (
                   <button
                     key={trigger.id}
                     type="button"
                     disabled={!ready}
-                    className={`w-full text-left py-4 px-4 rounded-lg transition-colors border-0 bg-transparent ${
+                    aria-disabled={!ready}
+                    title={ready ? trigger.name : reason || "Not available"}
+                    className={`w-full text-left py-4 px-4 rounded-lg transition-colors border-0 ${
                       ready
-                        ? `hover:${style.bg} cursor-pointer`
-                        : "opacity-50 cursor-not-allowed"
+                        ? "bg-transparent hover:bg-cyan-500/10 cursor-pointer"
+                        : "bg-muted/30 opacity-55 cursor-not-allowed grayscale"
                     }`}
                     onClick={() => handleSelectTrigger(trigger)}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.bg} ${style.text} shrink-0`}>
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl shrink-0 relative ${style.bg} ${style.text}`}
+                      >
                         <Icon className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-medium text-base text-foreground">{trigger.name}</span>
                         {!ready && (
-                          <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
-                            Coming soon
+                          <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-background border border-border">
+                            <Lock className="h-3 w-3 text-muted-foreground" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-base text-foreground">
+                            {trigger.name}
+                          </span>
+                          {!ready && (
+                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
+                              Coming soon
+                            </span>
+                          )}
+                        </div>
+                        {!ready && reason && (
+                          <span className="text-xs text-muted-foreground leading-snug">
+                            {reason}
                           </span>
                         )}
                       </div>

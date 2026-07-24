@@ -16,11 +16,16 @@ export interface AvailableTrigger {
   ready?: boolean;
   /** Alias for !ready when API provides it */
   comingSoon?: boolean;
+  /** Why the trigger is greyd out (from API or UI map) */
+  disabledReason?: string | null;
 }
 
 export interface AvailableAction {
   id: string;
   name: string;
+  ready?: boolean;
+  comingSoon?: boolean;
+  disabledReason?: string | null;
 }
 
 export interface Trigger {

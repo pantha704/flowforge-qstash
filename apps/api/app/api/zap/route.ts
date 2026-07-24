@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { Client } from "@upstash/qstash";
 import { getAppUrl } from "../../../lib/app-url";
+import {
+  getTriggerUnavailableReason,
+  isTriggerReady,
+} from "../../../lib/trigger-catalog";
 
 // Initialize QStash client
 const qstash = new Client({
@@ -73,6 +77,17 @@ export async function POST(req: NextRequest) {
 
     if (!triggerType) {
       return NextResponse.json({ error: "Unknown trigger" }, { status: 400 });
+    }
+
+    if (!isTriggerReady(triggerType.name)) {
+      return NextResponse.json(
+        {
+          error: getTriggerUnavailableReason(triggerType.name),
+          code: "TRIGGER_NOT_READY",
+          trigger: triggerType.name,
+        },
+        { status: 400 }
+      );
     }
 
     // 1) Persist zap + actions + trigger only (no external HTTP)
