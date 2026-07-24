@@ -1,22 +1,73 @@
 # FlowForge
 
-> A serverless **workflow automation** platform (Zapier-style): connect a trigger to ordered actions so recurring multi-step work is not manual.
+**Zapier-style workflow automation you host yourself** — pick a trigger, chain actions, and let a serverless worker run them in order.
 
-**Assignment context:** Eubrics Part 3 — *Show us something you've automated yourself.*  
-**Repo:** [github.com/pantha704/flowforge-qstash](https://github.com/pantha704/flowforge-qstash)
-
-## Live demo
-
-| | URL |
-|---|-----|
-| **Frontend** | [flowforge-qstash-web.vercel.app](https://flowforge-qstash-web.vercel.app) |
-| **API** | [flowforge-qstash-api.vercel.app/api](https://flowforge-qstash-api.vercel.app/api) |
-
-Sign up on the frontend, create a zap from a starter template, then use **Run** or a webhook/form URL to execute end-to-end.
+| | |
+|---|---|
+| **Live frontend** | [flowforge-qstash-web.vercel.app](https://flowforge-qstash-web.vercel.app) |
+| **Live API** | [flowforge-qstash-api.vercel.app/api](https://flowforge-qstash-api.vercel.app/api) |
+| **Repo** | [github.com/pantha704/flowforge-qstash](https://github.com/pantha704/flowforge-qstash) |
+| **Assignment** | Eubrics Part 3 — *Show us something you've automated yourself.* |
 
 ---
 
-## Problem → automation
+## TL;DR (read this first)
+
+### What it does
+
+You build a **Zap**: one **trigger** + ordered **actions**. When something happens (webhook, form submit, cron, RSS, or a manual “Run”), FlowForge stores a **ZapRun** and a **worker** executes each action in sequence. Fields can pull data from the trigger with `{{templates}}` (e.g. form `{{email}}` into an email body).
+
+### Why it exists
+
+Manual pain: copy-pasting form leads into Discord/email, one-off curl scripts for webhooks, or “when X then Y then Z” that you re-do by hand. FlowForge automates those pipelines end-to-end.
+
+### How a run works (one sentence)
+
+```
+Trigger → ZapRun (payload in DB) → POST /api/worker → actions in order
+```
+
+No Kafka, no always-on queue consumer — the worker is just an HTTP route (fits Vercel serverless). Schedules/RSS use **Upstash QStash** to call your API on a timer.
+
+### What you can demo in 2 minutes
+
+1. Open the **live frontend** → sign up  
+2. **Create New Zap** from a starter template (e.g. Webhook → Discord, Form → Email)  
+3. Hit **Run** on the zap card, or `curl` the webhook / open the public form URL  
+4. Open **Run History** → expand trigger payload + action results  
+
+### Works today (no third-party OAuth required for core demos)
+
+| Triggers | Actions (core) |
+|----------|----------------|
+| Webhook · Form · Manual Run · Schedule · RSS | Email · Discord · Slack · HTTP · Filter · Delay · Log · Set Variable |
+
+Integrations that need API keys (Notion, Trello, Sheets, SMS) are present or stubbed; core path works with just Postgres + JWT (email can demo-log without Resend).
+
+### Stack (short)
+
+**Turborepo + Bun** · **Next.js** (web + API) · **Postgres / Prisma** · **QStash** (cron/RSS) · **JWT** auth · optional Resend / OAuth  
+
+### Local quickstart
+
+```bash
+git clone https://github.com/pantha704/flowforge-qstash.git
+cd flowforge-qstash && bun install
+# copy .env.example → .env / .env.local for db, api, web (see Setup below)
+cd packages/db && bunx prisma generate && bunx prisma db push && bun run seed && cd ../..
+bun run dev
+# web :3000 · api :3001
+```
+
+---
+
+# Detailed documentation
+
+Everything below is the full reference: architecture, features, env vars, APIs, setup, deploy, and assignment notes. Nothing important is only in the TL;DR.
+
+---
+
+## Problem → automation (detail)
 
 **Manual pain:** Forwarding webhook events, form leads, or “when X happens do Y then Z” via copy-paste scripts and one-off curl commands.
 
